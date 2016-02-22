@@ -5,7 +5,6 @@ fbls is a simple, fast, encrypted, local storage database library written in Jav
 
 ## Why
 The future of software is distributed, that much should be clear by now. 
-At least if it's going to be a future anyone wants to experience. 
 Encryption helps no one if all it takes is a take down notice or government 
 sponsored DDOS attack. That means I'd rather put my eggs in the simple, fast,
 encrypted, local storage basket than go mad turning knobs on hairy solutions to

@@ -4,10 +4,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-//TODO convert Rec to interface with id(), insTime(), upTime(), setUpTime(), rev(), setRev(), methods
-///TODO add BasicRec with all fields, implement Rec
-///TODO change Tbl to use accessors
-
 //TODO add Context.isDel(this, UUID)
 ///check in Tbl.get()
 
@@ -29,6 +25,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 //TODO add log file reading/writing
 
 //TODO convert Albaum to use jbls
+
+//TODO compression?
 
 public class DB {
 	public DB(final Path p) {

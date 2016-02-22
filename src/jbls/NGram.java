@@ -55,7 +55,7 @@ public class NGram {
 			Set<BigInteger> _scores = new HashSet<>();
 			
 			for (int i = 0; i < 1000; i++) {
-				_strings.add(rndStr(20));
+				_strings.add(rndStr(50));
 			}
 
 			for (String s: _strings) {

@@ -4,24 +4,42 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Stream;
 
-public abstract class Tbl<RecT extends Rec> {
-	public final UIDCol Id = uidCol("id").read((r) -> r.id);
-	public final TimeCol InTime = timeCol("inTime").read((r) -> r.insTime);
-	public final TimeCol UpTime = timeCol("upTime").read((r) -> r.upTime);
-
+public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
+	public final IdCol   Id =      idCol(  "id")
+		.read((r)     -> r.id());
+	public final TimeCol InTime =  timeCol("inTime")
+		.read((r)     -> r.insTime());
+	public final IntCol  Rev =     intCol( "rev")
+		.read((r)     -> r.rev())
+		.write((r, v) -> r.setRev(v));	
+	public final TimeCol UpTime = timeCol("upTime")
+		.read((r)     -> r.upTime())
+		.write((r, v) -> r.setUpTime(v));
+		
 	public final String name;
 	
 	public Tbl(final String n) {
 		name = n;
 	}
-		
-	public RecT getRec(final UUID id, final DB cx) {
-		final Tbl<RecT> tt = cx.getTemp(this);
+	
+	@Override
+	public int compareTo(final Tbl<RecT> other) {
+		return name.compareTo(other.name);
+	}
+
+	public void del(final RecT r, final DB db) {
+		db.del(this, r);
+	}
+
+	@SuppressWarnings("unchecked")
+	public RecT get(final UUID id, final DB db) {
+		final Tbl<RecT> tt = db.tempTbl(this);
 		RecT r = tt.getRec(id);
 
 		if (r == null) {
-			r = recs.get(id);
+			r = (RecT)recs.get(id);
 
 			if (r == null) {
 				loadRec(id);
@@ -31,16 +49,24 @@ public abstract class Tbl<RecT extends Rec> {
 		return r;
 	}
 	
+	public Stream<UUID> ids() {
+		return offs.keySet().stream();
+	}
+	
 	public IntCol intCol(final String n) {
 		return new IntCol(n);
 	}
 
-	public RecT ins(final DB cx) {
+	public RecT ins(final DB db) {
 		final RecT r = newRec(UUID.randomUUID());
-		cx.getTemp(this).up(r);
+		db.tempTbl(this).up(r);
 		return r;
 	}
-	
+
+	public Stream<Rec> recs() {
+		return recs.values().stream();
+	}
+
 	public StringCol stringCol(final String n) {
 		return new StringCol(n);
 	}
@@ -49,12 +75,12 @@ public abstract class Tbl<RecT extends Rec> {
 		return new TimeCol(n);
 	}
 
-	public UIDCol uidCol(final String n) {
-		return new UIDCol(n);
+	public IdCol idCol(final String n) {
+		return new IdCol(n);
 	}
 
-	public void up(final RecT r, final DB cx) {
-		cx.getTemp(this).up(r);
+	public void up(final RecT r, final DB db) {
+		db.tempTbl(this).up(r);
 	}
 
 	protected void clear() {
@@ -62,9 +88,9 @@ public abstract class Tbl<RecT extends Rec> {
 		offs.clear();
 	}
 
-	protected Tbl<RecT> clone(final String n) {
+	protected TempTbl<RecT> temp(final String n) {
 		final Tbl<RecT> t = this;
-		return new Tbl<RecT>(n) {
+		return new TempTbl<RecT>(n) {
 			@Override
 			protected RecT newRec(UUID id) {
 				return t.newRec(id);
@@ -72,8 +98,14 @@ public abstract class Tbl<RecT extends Rec> {
 		};
 	}
 
+	protected void del(final UUID id) {
+		offs.remove(id);
+		recs.remove(id);
+	}
+	
 	protected RecT getRec(final UUID id) {
-		final RecT r = recs.get(id);	
+		@SuppressWarnings("unchecked")
+		final RecT r = (RecT)recs.get(id);	
 		return (r == null) ? loadRec(id) : r;
 	}
 
@@ -87,15 +119,16 @@ public abstract class Tbl<RecT extends Rec> {
 		return null;
 	}
 	
-	protected void up(final RecT r) {
-		recs.put(r.id, r);
-		offs.put(r.id, -1);
+	protected void up(final Rec r) {
+		recs.put(r.id(), r);
+		offs.put(r.id(), -1);
+		r.setRev(r.rev() + 1);
 	}
 
 	protected abstract RecT newRec(final UUID id);
 
 	private final Map<UUID, Integer> offs = new ConcurrentSkipListMap<>();
-	private final Map<UUID, RecT> recs = new ConcurrentSkipListMap<>();
+	private final Map<UUID, Rec> recs = new ConcurrentSkipListMap<>();
 
 	public class IntCol extends Col<RecT, Integer> {
 		public IntCol(final String n) {
@@ -145,17 +178,17 @@ public abstract class Tbl<RecT extends Rec> {
 		}
 	}
 
-	public class UIDCol extends Col<RecT, UUID> {
-		public UIDCol(final String n) {
+	public class IdCol extends Col<RecT, UUID> {
+		public IdCol(final String n) {
 			super(n);
 		}
 	
-		public UIDCol read(final Reader<RecT, UUID> r) {
+		public IdCol read(final Reader<RecT, UUID> r) {
 			super.read(r);
 			return this;
 		}
 
-		public UIDCol write(final Writer<RecT, UUID> w) {
+		public IdCol write(final Writer<RecT, UUID> w) {
 			super.write(w);
 			return this;
 		}

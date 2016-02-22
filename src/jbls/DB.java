@@ -4,6 +4,13 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+//TODO convert Rec to interface with id(), insTime(), upTime(), setUpTime(), rev(), setRev(), methods
+///TODO add BasicRec with all fields, implement Rec
+///TODO change Tbl to use accessors
+
+//TODO add Context.isDel(this, UUID)
+///check in Tbl.get()
+
 //TODO add context commit/rollback test
 
 //TODO add Idx / UIdx / MIdx
@@ -19,37 +26,54 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 //TODO add commit/rollback indexing tests
 
-//TODO add Tbl.del
-///add Context.del
+//TODO add log file reading/writing
+
+//TODO convert Albaum to use jbls
 
 public class DB {
 	public DB(final Path p) {
 	}
 	
 	public void commit() {
+		tempTbls.entrySet()
+			.parallelStream()
+			.forEach((e) -> {
+				e.getValue().recs()
+					.parallel()
+					.forEach((r) -> e.getKey().up(r));
+
+				e.getValue().dels()
+					.parallel()
+					.forEach((id) -> e.getKey().del(id));
+			});
+
 		clearTemp();
 	}
 	
-	public void rollback() {		
+	public void rollback() {
 		clearTemp();
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <RecT extends Rec> Tbl<RecT> getTemp(final Tbl<RecT> t) {
+	public <RecT extends Rec> TempTbl<RecT> tempTbl(final Tbl<RecT> t) {
 		if (tempTbls.containsKey(t)) {
-			return (Tbl<RecT>)tempTbls.get(t);
+			return (TempTbl<RecT>)tempTbls.get(t);
 		} else {
 			final String ttn = String.format("temp%s", 
 				Character.toUpperCase(t.name.charAt(0)), t.name.substring(1));
-			final Tbl<RecT> tt = t.clone(ttn);
+			final TempTbl<RecT> tt = t.temp(ttn);
 			tempTbls.put(t, tt);
 			return tt;
 		}
+	}
+	
+	protected <RecT extends Rec> void del(final Tbl<RecT> t, final RecT r) {
+		tempTbl(t).del(r.id());
 	}
 	
 	private void clearTemp() {
 		tempTbls.values().parallelStream().forEach((tt) -> tt.clear());
 	}
 	
-	private Map<Tbl<?>, Tbl<?>> tempTbls = new ConcurrentSkipListMap<>();
+	private Map<Tbl<?>, TempTbl<?>> tempTbls = new ConcurrentSkipListMap<>();
 }

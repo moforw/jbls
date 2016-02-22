@@ -3,33 +3,17 @@ package jbls;
 import java.time.Instant;
 import java.util.UUID;
 
-public class Rec implements Comparable<Rec> {
-	public Rec(UUID i) {
-		id = i;
-		insTime = Instant.now();
-	}
-	
-	public final UUID id;
-	public final Instant insTime;
-	
-	@Override
-	public int compareTo(final Rec other) {
-		return id.compareTo(other.id);
-	}
+public interface Rec extends Comparable<Rec> {
+	UUID id();
+	Instant insTime();
+	int rev();
+	Instant upTime();
 
-	@Override
-	public boolean equals(final Object other) {
-		return id.equals(((Rec)other).id);
-	}
-
-	@Override
-	public int hashCode() {
-		return id.hashCode();
-	}
+	void setRev(final int r);
+	void setUpTime(final Instant t);
 	
-	public Instant upTime() {
-		return upTime;
-	}
-	
-	protected Instant upTime;
+	@Override
+	default int compareTo(final Rec other) {
+		return id().compareTo(other.id());
+	}	
 }

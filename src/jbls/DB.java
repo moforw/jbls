@@ -1,5 +1,6 @@
 package jbls;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -72,22 +73,27 @@ public class DB {
 	}
 
 	public long commitRec(final Tbl<?> t, Rec r) {
-		try (final FileOutputStream f = new FileOutputStream(t.recsPath(path).toString(), true)) {
-			final long offs = f.getChannel().size();
-			final OutputStreamWriter w = new OutputStreamWriter(f);
-			try(JsonGenerator json = Json.createGenerator(w)) {
-				json.writeStartObject();
-				t.writeJson(r, json);
-				json.writeEnd();
-				
-				try {
-					w.write('\n');
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			}
+		try {
+			final File f = new File(t.recsPath(path).toString());
+			f.createNewFile();
 			
-			return offs;
+			try (final FileOutputStream fs = new FileOutputStream(f, true)) {
+				final long offs = fs.getChannel().size();
+				final OutputStreamWriter w = new OutputStreamWriter(fs);
+				try(JsonGenerator json = Json.createGenerator(w)) {
+					json.writeStartObject();
+					t.writeJson(r, json);
+					json.writeEnd();
+					
+					try {
+						w.write('\n');
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				}
+				
+				return offs;
+			} 
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

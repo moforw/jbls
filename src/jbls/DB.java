@@ -13,13 +13,14 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-//TODO add Context.isDel(this, UUID)
-///check in Tbl.get()
-///add test
-
 //TODO add PrevOffs/prevOffs to Tbl/Rec/BasicRec
 
 //TODO only open tbl files once per commit
+
+//TODO implement file loading
+///add Tbl.loadOffs(path)
+///add Tbl.loadRecs(path)
+///add tests
 
 //TODO add aes encryption
 
@@ -120,7 +121,27 @@ public class DB {
 		}
 	}
 
+	public boolean isDel(final Tbl<?> t, final UUID id) {
+		final TempTbl<?> tt = tempTbls.get(t);
+		
+		if (tt == null) {
+			return false;
+		}
+		
+		return tt.isDel(id);
+	}
 	
+	public <RecT extends Rec> boolean isDirty(final Tbl<RecT> t, final RecT r) {
+		@SuppressWarnings("unchecked")
+		final TempTbl<RecT> tt = (TempTbl<RecT>)tempTbls.get(t);
+		
+		if (tt == null) {
+			return false;
+		}
+		
+		return tt.get(r.id()) != null;
+	}
+
 	public void rollback() {
 		clearTemp();
 	}

@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 import javax.json.stream.JsonGenerator;
 
-public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
+public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, Def<RecT> {
 	public final IdCol<RecT>   Id =      idCol(  "id")
 		.read((r)     -> r.id());
 	public final TimeCol<RecT> InTime =  timeCol("inTime")
@@ -29,8 +29,9 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 		name = n;
 	}
 	
-	public <ValT, ColT extends Col<RecT, ValT>> ColT addCol(final ColT c) {
-		cols().add(c);
+	public <ValT extends Comparable<ValT>, ColT extends Col<RecT, ValT>>
+	ColT addCol(final ColT c) {
+		colSet().add(c);
 		return c;
 	}
 	
@@ -39,24 +40,25 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 		return name.compareTo(other.name);
 	}
 
+	@Override
+	public Stream<Col<RecT, ?>> cols() {
+		return cols.stream();
+	}
+
 	public void del(final RecT r, final DB db) {
 		db.del(this, r);
 	}
 
-	@SuppressWarnings("unchecked")
 	public RecT get(final UUID id, final DB db) {
-		final Tbl<RecT> tt = db.tempTbl(this);
-		RecT r = tt.getRec(id);
-
-		if (r == null) {
-			r = (RecT)recs.get(id);
-
-			if (r == null) {
-				loadRec(id);
-			}
+		final TempTbl<RecT> tt = db.tempTbl(this);
+		
+		if (tt.isDel(id)) {
+			return null;
 		}
 		
-		return r;
+		RecT r = tt.get(id);
+		
+		return (r == null) ? get(id) : r;
 	}
 	
 	public Stream<UUID> ids() {
@@ -131,7 +133,7 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 		recs.remove(id);
 	}
 	
-	protected RecT getRec(final UUID id) {
+	protected RecT get(final UUID id) {
 		@SuppressWarnings("unchecked")
 		final RecT r = (RecT)recs.get(id);	
 		return (r == null) ? loadRec(id) : r;
@@ -155,7 +157,7 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 
 	protected abstract RecT newRec(final UUID id);
 
-	private Set<Col<RecT, ?>> cols() {
+	private Set<Col<RecT, ?>> colSet() {
 		if (cols == null) {
 			cols = new TreeSet<>();
 		}

@@ -1,9 +1,6 @@
 package jbls;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.nio.file.FileSystems;
 import java.time.Instant;
@@ -112,6 +109,21 @@ public class BasicRec implements Rec {
 		}
 
 		@Test
+		public void testIsDirty() {
+			Customer c = Customer.table.ins(db);
+			assertTrue(db.isDirty(Customer.table, c));
+
+			db.commit();
+			assertFalse(db.isDirty(Customer.table, c));
+			
+			Customer.table.up(c, db);
+			assertTrue(db.isDirty(Customer.table, c));
+
+			db.commit();
+			assertFalse(db.isDirty(Customer.table, c));			
+		}
+
+		@Test
 		public void testCommit() {
 			Customer c = Customer.table.ins(db);
 			db.commit();
@@ -122,6 +134,15 @@ public class BasicRec implements Rec {
 			db.commit();
 			assertNull(db.tempTbl(Customer.table).get(c.id, db));	
 			assertNull(Customer.table.get(c.id, db));	
+		}
+
+		@Test
+		public void testGetDel() {
+			Customer c = Customer.table.ins(db);
+			db.commit();
+			Customer.table.del(c, db);
+			assertTrue(db.isDel(Customer.table, c.id));				
+			assertNull(Customer.table.get(c.id, db));				
 		}
 
 		@Test

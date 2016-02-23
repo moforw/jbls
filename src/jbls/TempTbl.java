@@ -26,5 +26,9 @@ public abstract class TempTbl<RecT extends Rec> extends Tbl<RecT> {
 		return dels.stream();
 	}
 
+	public boolean isDel(final UUID id) {
+		return dels.contains(id);
+	}
+	
 	private final Set<UUID> dels = new ConcurrentSkipListSet<>();
 }

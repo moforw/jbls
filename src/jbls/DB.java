@@ -13,18 +13,13 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-//TODO extract Col classes from Tbl
-
-//TODO update Rec objs on rollback
-///add test
-
-//TODO only open tbl files once per commit
-
 //TODO add Trans class
 ///DB constructor param
 ///implement closeable
 ///rollback if not committed
 ///add DB.trans() to create new
+
+//TODO only open tbl files once per commit
 
 //TODO add Context.isDel(this, UUID)
 ///check in Tbl.get()
@@ -147,6 +142,10 @@ public class DB {
 			tempTbls.put(t, tt);
 			return tt;
 		}
+	}
+	
+	public Trans trans() {
+		return new Trans(this);
 	}
 	
 	protected <RecT extends Rec> void del(final Tbl<RecT> t, final RecT r) {

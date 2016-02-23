@@ -94,7 +94,7 @@ public class BasicRec implements Rec {
 			new DB(FileSystems.getDefault().getPath("./testdb/"));
 		
 		@Test
-		public void testInsUpDel() throws InterruptedException {
+		public void testInsUpDel() {
 			Customer c = Customer.table.ins(db);
 			assertNotNull(c.id);
 			assertTrue(c.insTime.compareTo(Instant.now()) <= 0);
@@ -112,7 +112,7 @@ public class BasicRec implements Rec {
 		}
 
 		@Test
-		public void testCommit() throws InterruptedException {
+		public void testCommit() {
 			Customer c = Customer.table.ins(db);
 			db.commit();
 			assertNull(db.tempTbl(Customer.table).get(c.id, db));	
@@ -123,6 +123,15 @@ public class BasicRec implements Rec {
 			assertNull(db.tempTbl(Customer.table).get(c.id, db));	
 			assertNull(Customer.table.get(c.id, db));	
 		}
-	
+
+		@Test
+		public void testTrans() {
+			Customer c;
+			try(final Trans tr = db.trans()) {
+				c = Customer.table.ins(db);
+			}
+			
+			assertNull(Customer.table.get(c.id, db));	
+		}	
 	}
 }

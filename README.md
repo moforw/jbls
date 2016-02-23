@@ -26,3 +26,8 @@ actually interacts with storage.
 ## Records
 All record types must implement the Rec interface. BasicRec contains a default
 implementation for extending.
+
+## Transactions
+The Trans class is a simple Closeable wrapper that rolls back any left over
+changes when closed. Transactions are usually scoped with try () to clean 
+up in case of errors. New transactions can be created by calling DB::trans(). 

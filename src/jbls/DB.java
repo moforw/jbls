@@ -4,13 +4,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-//TODO add NGram class
-///TODO add static BigInteger score(final String s)
-///TODO build from other side and reverse using .not()?
-///TODO or, figure out largest value from string length?
-///TODO multiplier can be increased/decreased by shifting
-///TODO add timing test
-
 //TODO add Trans class
 ///DB constructor param
 ///implement closeable

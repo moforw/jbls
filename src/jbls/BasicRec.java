@@ -67,7 +67,7 @@ public class BasicRec implements Rec {
 	public static class Tests {		
 		public static class Customer extends BasicRec {
 			public static class T extends Tbl<Customer> {		
-				public final StringCol Name = stringCol("name")
+				public final StringCol<Customer> Name = stringCol("name")
 					.read((a)     -> a.name)
 					.write((a, v) -> a.name = v);
 				

@@ -2,7 +2,6 @@ package jbls;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -13,14 +12,14 @@ import java.util.stream.Stream;
 import javax.json.stream.JsonGenerator;
 
 public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
-	public final IdCol   Id =      idCol(  "id")
+	public final IdCol<RecT>   Id =      idCol(  "id")
 		.read((r)     -> r.id());
-	public final TimeCol InTime =  timeCol("inTime")
+	public final TimeCol<RecT> InTime =  timeCol("inTime")
 		.read((r)     -> r.insTime());
-	public final IntCol  Rev =     intCol( "rev")
+	public final IntCol<RecT>  Rev =     intCol( "rev")
 		.read((r)     -> r.rev())
 		.write((r, v) -> r.setRev(v));	
-	public final TimeCol UpTime = timeCol("upTime")
+	public final TimeCol<RecT> UpTime =  timeCol("upTime")
 		.read((r)     -> r.upTime())
 		.write((r, v) -> r.setUpTime(v));
 		
@@ -64,8 +63,8 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 		return offs.keySet().stream();
 	}
 	
-	public IntCol intCol(final String n) {
-		return addCol(new IntCol(n));
+	public IntCol<RecT> intCol(final String n) {
+		return addCol(new IntCol<RecT>(n));
 	}
 
 	public RecT ins(final DB db) {
@@ -78,16 +77,16 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 		return recs.values().stream();
 	}
 
-	public StringCol stringCol(final String n) {
-		return addCol(new StringCol(n));
+	public StringCol<RecT> stringCol(final String n) {
+		return addCol(new StringCol<RecT>(n));
 	}
 
-	public TimeCol timeCol(final String n) {
-		return addCol(new TimeCol(n));
+	public TimeCol<RecT> timeCol(final String n) {
+		return addCol(new TimeCol<RecT>(n));
 	}
 
-	public IdCol idCol(final String n) {
-		return addCol(new IdCol(n));
+	public IdCol<RecT> idCol(final String n) {
+		return addCol(new IdCol<RecT>(n));
 	}
 
 	public Path offsPath(final Path root) {
@@ -167,104 +166,4 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 	private Set<Col<RecT, ?>> cols;
 	private final Map<UUID, Integer> offs = new ConcurrentSkipListMap<>();
 	private final Map<UUID, Rec> recs = new ConcurrentSkipListMap<>();
-
-	public class IntCol extends Col<RecT, Integer> {
-		public IntCol(final String n) {
-			super(n);
-		}
-	
-		public IntCol read(final Reader<RecT, Integer> r) {
-			super.read(r);
-			return this;
-		}
-
-		public IntCol write(final Writer<RecT, Integer> w) {
-			super.write(w);
-			return this;
-		}
-		
-		@SuppressWarnings("unchecked")
-		public void writeJson(final Rec r, final JsonGenerator json) {
-			int v = getVal((RecT)r);
-			json.write(name, v);
-		}
-	}
-
-	public class StringCol extends Col<RecT, String> {
-		public StringCol(final String n) {
-			super(n);
-		}
-	
-		public StringCol read(final Reader<RecT, String> r) {
-			super.read(r);
-			return this;
-		}
-
-		public StringCol write(final Writer<RecT, String> w) {
-			super.write(w);
-			return this;
-		}
-
-		@SuppressWarnings("unchecked")
-		public void writeJson(final Rec r, final JsonGenerator json) {
-			String v = getVal((RecT)r);
-			if (v == null) {
-				json.writeNull(name);
-			} else {
-				json.write(name, v);
-			}
-		}
-	}
-
-	public class TimeCol extends Col<RecT, Instant> {
-		public TimeCol(final String n) {
-			super(n);
-		}
-	
-		public TimeCol read(final Reader<RecT, Instant> r) {
-			super.read(r);
-			return this;
-		}
-
-		public TimeCol write(final Writer<RecT, Instant> w) {
-			super.write(w);
-			return this;
-		}
-	
-		@SuppressWarnings("unchecked")
-		public void writeJson(final Rec r, final JsonGenerator json) {
-			final Instant v = getVal((RecT)r);
-			if (v == null) {
-				json.writeNull(name);
-			} else {
-				json.write(name, v.toString());
-			}
-		}
-	}
-
-	public class IdCol extends Col<RecT, UUID> {
-		public IdCol(final String n) {
-			super(n);
-		}
-	
-		public IdCol read(final Reader<RecT, UUID> r) {
-			super.read(r);
-			return this;
-		}
-
-		public IdCol write(final Writer<RecT, UUID> w) {
-			super.write(w);
-			return this;
-		}
-
-		@SuppressWarnings("unchecked")
-		public void writeJson(final Rec r, final JsonGenerator json) {
-			final UUID v = getVal((RecT)r);
-			if (v == null) {
-				json.writeNull(name);
-			} else {
-				json.write(name, v.toString());
-			}
-		}
-	}
 }

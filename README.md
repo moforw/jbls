@@ -1,7 +1,8 @@
-# fbls
+# jbls
 
 ## What
-fbls is a simple, fast, encrypted, local storage database library written in Java.
+jbls is a simple, fast, encrypted, local storage database library written in 
+Java.
 
 ## Why
 The future of software is distributed, that much should be clear by now. 
@@ -16,16 +17,16 @@ Rev & UpTime. Each predefined column has corresponding predefined accessors in
 the Rec interface and a field in BasicRec.
 
 ### Readers & Writers
-Calling Col.reader(), and/or Col.writer() is optional. That is, you can leave them
-empty if you don't need them. One use of that possibility is to leave
+Calling Col.reader(), and/or Col.writer() is optional. That is, you can leave 
+them empty if you don't need them. One use of that possibility is to leave
 out the writer for final record fields; which let's you ensure that they are
 only initialized, never overwritten. Leaving both unimplemented gives you a 
 transient column; one that can be indexed and used like any other, but never 
 actually interacts with storage.
 
 ## Records
-All record types must implement the Rec interface. BasicRec contains a default
-implementation for extending.
+All record types must implement the Rec interface. The BasicRec class contains 
+a default implementation for extending.
 
 ## Transactions
 The Trans class is a simple Closeable wrapper that rolls back any left over

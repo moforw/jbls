@@ -13,19 +13,13 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-//TODO add Trans class
-///DB constructor param
-///implement closeable
-///rollback if not committed
-///add DB.trans() to create new
-
-//TODO only open tbl files once per commit
-
 //TODO add Context.isDel(this, UUID)
 ///check in Tbl.get()
 ///add test
 
 //TODO add PrevOffs/prevOffs to Tbl/Rec/BasicRec
+
+//TODO only open tbl files once per commit
 
 //TODO add aes encryption
 

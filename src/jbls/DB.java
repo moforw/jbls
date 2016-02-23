@@ -13,8 +13,12 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
+//TODO extract Col classes from Tbl
+
 //TODO update Rec objs on rollback
 ///add test
+
+//TODO only open tbl files once per commit
 
 //TODO add Trans class
 ///DB constructor param
@@ -28,6 +32,10 @@ import javax.json.stream.JsonGenerator;
 
 //TODO add PrevOffs/prevOffs to Tbl/Rec/BasicRec
 
+//TODO add aes encryption
+
+//TODO convert Albaum to use jbls
+
 //TODO add Idx / UIdx / MIdx
 ///use concurrent maps / sets
 ////add set ops to Idx interface
@@ -38,10 +46,6 @@ import javax.json.stream.JsonGenerator;
 ///take Col as constructor param
 
 //TODO add indexing test
-
-//TODO convert Albaum to use jbls
-
-//TODO compression?
 
 public class DB {
 	public DB(final Path p) {

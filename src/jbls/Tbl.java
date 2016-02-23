@@ -1,10 +1,16 @@
 package jbls;
 
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Stream;
+
+import javax.json.stream.JsonGenerator;
 
 public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 	public final IdCol   Id =      idCol(  "id")
@@ -22,6 +28,11 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 	
 	public Tbl(final String n) {
 		name = n;
+	}
+	
+	public <ValT, ColT extends Col<RecT, ValT>> ColT addCol(final ColT c) {
+		cols().add(c);
+		return c;
 	}
 	
 	@Override
@@ -54,7 +65,7 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 	}
 	
 	public IntCol intCol(final String n) {
-		return new IntCol(n);
+		return addCol(new IntCol(n));
 	}
 
 	public RecT ins(final DB db) {
@@ -68,21 +79,39 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 	}
 
 	public StringCol stringCol(final String n) {
-		return new StringCol(n);
+		return addCol(new StringCol(n));
 	}
 
 	public TimeCol timeCol(final String n) {
-		return new TimeCol(n);
+		return addCol(new TimeCol(n));
 	}
 
 	public IdCol idCol(final String n) {
-		return new IdCol(n);
+		return addCol(new IdCol(n));
+	}
+
+	public Path offsPath(final Path root) {
+		return root.resolve(
+			FileSystems.getDefault().getPath(
+				String.format("%s.fbo", name)));
+	}
+
+	public Path recsPath(final Path root) {
+		return root.resolve(
+			FileSystems.getDefault().getPath(
+				String.format("%s.fbr", name)));
 	}
 
 	public void up(final RecT r, final DB db) {
 		db.tempTbl(this).up(r);
 	}
 
+	public void writeJson(final Rec r, final JsonGenerator json) {
+		for (final Col<?, ?> c: cols) {
+			c.writeJson(r, json);
+		}
+	}
+	
 	protected void clear() {
 		recs.clear();
 		offs.clear();
@@ -127,6 +156,15 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 
 	protected abstract RecT newRec(final UUID id);
 
+	private Set<Col<RecT, ?>> cols() {
+		if (cols == null) {
+			cols = new TreeSet<>();
+		}
+		
+		return cols;
+	}
+	
+	private Set<Col<RecT, ?>> cols;
 	private final Map<UUID, Integer> offs = new ConcurrentSkipListMap<>();
 	private final Map<UUID, Rec> recs = new ConcurrentSkipListMap<>();
 
@@ -144,6 +182,12 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 			super.write(w);
 			return this;
 		}
+		
+		@SuppressWarnings("unchecked")
+		public void writeJson(final Rec r, final JsonGenerator json) {
+			int v = getVal((RecT)r);
+			json.write(name, v);
+		}
 	}
 
 	public class StringCol extends Col<RecT, String> {
@@ -159,6 +203,16 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 		public StringCol write(final Writer<RecT, String> w) {
 			super.write(w);
 			return this;
+		}
+
+		@SuppressWarnings("unchecked")
+		public void writeJson(final Rec r, final JsonGenerator json) {
+			String v = getVal((RecT)r);
+			if (v == null) {
+				json.writeNull(name);
+			} else {
+				json.write(name, v);
+			}
 		}
 	}
 
@@ -176,6 +230,16 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 			super.write(w);
 			return this;
 		}
+	
+		@SuppressWarnings("unchecked")
+		public void writeJson(final Rec r, final JsonGenerator json) {
+			final Instant v = getVal((RecT)r);
+			if (v == null) {
+				json.writeNull(name);
+			} else {
+				json.write(name, v.toString());
+			}
+		}
 	}
 
 	public class IdCol extends Col<RecT, UUID> {
@@ -191,6 +255,16 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>> {
 		public IdCol write(final Writer<RecT, UUID> w) {
 			super.write(w);
 			return this;
+		}
+
+		@SuppressWarnings("unchecked")
+		public void writeJson(final Rec r, final JsonGenerator json) {
+			final UUID v = getVal((RecT)r);
+			if (v == null) {
+				json.writeNull(name);
+			} else {
+				json.write(name, v.toString());
+			}
 		}
 	}
 }

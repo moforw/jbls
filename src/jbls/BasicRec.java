@@ -91,7 +91,7 @@ public class BasicRec implements Rec {
 		}
 		
 		public static final DB db = 
-			new DB(FileSystems.getDefault().getPath("commit.log"));
+			new DB(FileSystems.getDefault().getPath("./testdb/"));
 		
 		@Test
 		public void testInsUpDel() throws InterruptedException {

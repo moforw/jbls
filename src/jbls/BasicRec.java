@@ -9,16 +9,17 @@ import java.util.UUID;
 import org.junit.Test;
 
 public class BasicRec implements Rec {
-	public BasicRec(UUID i) {
-		id = i;
-		insTime = Instant.now();
-		upTime = insTime;
-		rev = 0;
-	}
-	
 	public final UUID id;
 	public final Instant insTime;
 
+	public BasicRec(final UUID i) {
+		id = i;
+		insTime = Instant.now();
+		upTime = insTime;
+		prevOffs = -1;
+		rev = 0;
+	}
+		
 	@Override
 	public boolean equals(final Object other) {
 		return id.equals(((BasicRec)other).id);
@@ -40,8 +41,18 @@ public class BasicRec implements Rec {
 	}
 
 	@Override
+	public long prevOffs() {
+		return prevOffs;
+	}
+
+	@Override
 	public int rev() {
 		return rev;
+	}
+
+	@Override
+	public void setPrevOffs(final long po) {
+		prevOffs = po;
 	}
 
 	@Override
@@ -58,8 +69,9 @@ public class BasicRec implements Rec {
 		return upTime;
 	}
 	
-	protected int rev;
-	protected Instant upTime;
+	private int rev;
+	private Instant upTime;
+	private long prevOffs;
 	
 	public static class Tests {		
 		public static class Customer extends BasicRec {
@@ -95,16 +107,16 @@ public class BasicRec implements Rec {
 			Customer c = Customer.table.ins(db);
 			assertNotNull(c.id);
 			assertTrue(c.insTime.compareTo(Instant.now()) <= 0);
-			assertTrue(c.upTime.compareTo(Instant.now()) <= 0);
-			assertEquals(1, c.rev);
+			assertTrue(c.upTime().compareTo(Instant.now()) <= 0);
+			assertEquals(1, c.rev());
 			assertEquals(c, db.tempTbl(Customer.table).get(c.id, db));
 			assertEquals(c, Customer.table.get(c.id, db));	
 			Customer.table.up(c, db);
-			assertEquals(2, c.rev);
-			assertTrue(c.upTime.compareTo(c.insTime) >= 0);
+			assertEquals(2, c.rev());
+			assertTrue(c.upTime().compareTo(c.insTime) >= 0);
 			assertEquals(c, db.tempTbl(Customer.table).get(c.id, db));	
 			Customer.table.del(c, db);
-			assertEquals(2, c.rev);
+			assertEquals(2, c.rev());
 			assertNull(db.tempTbl(Customer.table).get(c.id, db));	
 		}
 
@@ -145,6 +157,21 @@ public class BasicRec implements Rec {
 			assertNull(Customer.table.get(c.id, db));				
 		}
 
+		@Test
+		public void testPrevOffs() {
+			Customer c = Customer.table.ins(db);
+			db.commit();			
+			long o = Customer.table.offs(c);
+			assertNotEquals(-1, o);
+			
+			Customer.table.up(c, db);
+			db.commit();
+			assertEquals(o, c.prevOffs());
+			assertNotEquals(-1, Customer.table.offs(c));
+			assertNotEquals(o, Customer.table.offs(c));
+		}
+
+		
 		@Test
 		public void testTrans() {
 			Customer c;

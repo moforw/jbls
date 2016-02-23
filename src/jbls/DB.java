@@ -13,11 +13,10 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-//TODO add PrevOffs/prevOffs to Tbl/Rec/BasicRec
-
 //TODO only open tbl files once per commit
 
 //TODO implement file loading
+///finish implementing Tbl.loadRec()
 ///add Tbl.loadOffs(path)
 ///add Tbl.loadRecs(path)
 ///add tests
@@ -49,10 +48,10 @@ public class DB {
 				e.getValue().recs()
 					.parallel()
 					.forEach((r) -> {
-						e.getKey().up(r);
+						e.getKey().setPrevOffs(r);
 						long offs = commitRec(e.getKey(), r);
 						commitOffs(e.getKey(), r.id(), offs);
-						
+						e.getKey().up(r, offs);						
 					});
 
 				e.getValue().dels()
@@ -78,7 +77,6 @@ public class DB {
 					json.writeStartObject();
 					t.writeJson(r, json);
 					json.writeEnd();
-					
 					try {
 						w.write('\n');
 					} catch (IOException e) {

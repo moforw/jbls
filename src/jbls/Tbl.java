@@ -12,14 +12,17 @@ import java.util.stream.Stream;
 import javax.json.stream.JsonGenerator;
 
 public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, Def<RecT> {
-	public final IdCol<RecT>   Id =      idCol(  "id")
+	public final IdCol<RecT>   Id =       idCol(   "id")
 		.read((r)     -> r.id());
-	public final TimeCol<RecT> InTime =  timeCol("inTime")
+	public final TimeCol<RecT> InTime =   timeCol( "inTime")
 		.read((r)     -> r.insTime());
-	public final IntCol<RecT>  Rev =     intCol( "rev")
+	public final LongCol<RecT>  PrevOffs = longCol("prevOffs")
+		.read((r)     -> r.prevOffs())
+		.write((r, v) -> r.setPrevOffs(v));	
+	public final IntCol<RecT>  Rev =       intCol( "rev")
 		.read((r)     -> r.rev())
 		.write((r, v) -> r.setRev(v));	
-	public final TimeCol<RecT> UpTime =  timeCol("upTime")
+	public final TimeCol<RecT> UpTime =    timeCol("upTime")
 		.read((r)     -> r.upTime())
 		.write((r, v) -> r.setUpTime(v));
 		
@@ -60,7 +63,11 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		
 		return (r == null) ? get(id) : r;
 	}
-	
+
+	public IdCol<RecT> idCol(final String n) {
+		return addCol(new IdCol<RecT>(n));
+	}
+
 	public Stream<UUID> ids() {
 		return offs.keySet().stream();
 	}
@@ -71,8 +78,12 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 
 	public RecT ins(final DB db) {
 		final RecT r = newRec(UUID.randomUUID());
-		db.tempTbl(this).up(r);
+		db.tempTbl(this).up(r, -1);
 		return r;
+	}
+
+	public LongCol<RecT> longCol(final String n) {
+		return addCol(new LongCol<RecT>(n));
 	}
 
 	public Stream<Rec> recs() {
@@ -87,10 +98,10 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		return addCol(new TimeCol<RecT>(n));
 	}
 
-	public IdCol<RecT> idCol(final String n) {
-		return addCol(new IdCol<RecT>(n));
+	public long offs(final RecT r) {
+		return offs.containsKey(r.id()) ? offs.get(r.id()) : -1;
 	}
-
+	
 	public Path offsPath(final Path root) {
 		return root.resolve(
 			FileSystems.getDefault().getPath(
@@ -104,7 +115,7 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 	}
 
 	public void up(final RecT r, final DB db) {
-		db.tempTbl(this).up(r);
+		db.tempTbl(this).up(r, offs(r));
 	}
 
 	public void writeJson(final Rec r, final JsonGenerator json) {
@@ -148,11 +159,20 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		
 		return null;
 	}
+
+	protected void setPrevOffs(final Rec r) {
+		@SuppressWarnings("unchecked")
+		final long po = offs((RecT)r);
+		
+		if (po > -1) {
+			r.setPrevOffs(offs.get(r.id()));
+		}
+	}
 	
-	protected void up(final Rec r) {
-		recs.put(r.id(), r);
-		offs.put(r.id(), -1);
+	protected void up(final Rec r, final long o) {
 		r.setRev(r.rev() + 1);
+		recs.put(r.id(), r);
+		offs.put(r.id(), o);
 	}
 
 	protected abstract RecT newRec(final UUID id);
@@ -166,6 +186,6 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 	}
 	
 	private Set<Col<RecT, ?>> cols;
-	private final Map<UUID, Integer> offs = new ConcurrentSkipListMap<>();
+	private final Map<UUID, Long> offs = new ConcurrentSkipListMap<>();
 	private final Map<UUID, Rec> recs = new ConcurrentSkipListMap<>();
 }

@@ -7,19 +7,20 @@ public class IntCol<RecT> extends Col<RecT, Integer> {
 		super(n);
 	}
 
+	@Override
 	public IntCol<RecT> read(final Reader<RecT, Integer> r) {
 		super.read(r);
 		return this;
 	}
 
+	@Override
 	public IntCol<RecT> write(final Writer<RecT, Integer> w) {
 		super.write(w);
 		return this;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public void writeJson(final Rec r, final JsonGenerator json) {
-		int v = getVal((RecT)r);
+	@Override
+	public void writeJson(final Integer v, final JsonGenerator json) {
 		json.write(name, v);
 	}
 }

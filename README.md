@@ -11,10 +11,6 @@ sponsored DDOS attack. That means I'd rather put my eggs in the simple, fast,
 encrypted, local storage basket than go mad turning knobs on hairy solutions to
 the wrong problem.
 
-## Definitions
-Tables, columns and indexes are all definitions. Def's are commonly used as 
-column selectors.
-
 ## Columns
 Each table has a set of columns. Four are predefined in Tbl: Id, InsTime, 
 Rev & UpTime. Each predefined column has corresponding predefined methods in 

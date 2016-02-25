@@ -32,8 +32,7 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		name = n;
 	}
 	
-	public <ValT extends Comparable<ValT>, ColT extends Col<RecT, ValT>>
-	ColT addCol(final ColT c) {
+	public <ValT, ColT extends Col<RecT, ValT>> ColT addCol(final ColT c) {
 		colSet().add(c);
 		return c;
 	}
@@ -88,6 +87,10 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 
 	public Stream<Rec> recs() {
 		return recs.values().stream();
+	}
+
+	public <ValT> SeqCol<RecT, ValT> seqCol(final Fld<RecT, ValT> fld) {		
+		return addCol(new SeqCol<RecT, ValT>(fld));
 	}
 
 	public StringCol<RecT> stringCol(final String n) {

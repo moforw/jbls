@@ -4,6 +4,8 @@ import static org.junit.Assert.*;
 
 import java.nio.file.FileSystems;
 import java.time.Instant;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import org.junit.Test;
@@ -77,8 +79,12 @@ public class BasicRec implements Rec {
 		public static class Customer extends BasicRec {
 			public static class T extends Tbl<Customer> {		
 				public final StringCol<Customer> Name = stringCol("name")
-					.read((a)     -> a.name)
-					.write((a, v) -> a.name = v);
+					.read((c)     -> c.name)
+					.write((c, v) -> c.name = v);
+
+				public final SeqCol<Customer, UUID> Orders = 
+					seqCol(new IdCol<Customer>("orders"))
+					.read((c)     -> c.orders);
 				
 				public T(final String n) {
 					super(n);
@@ -92,13 +98,42 @@ public class BasicRec implements Rec {
 			
 			public static final T table = new T("customers");		
 
+			public String name;
+			public Set<UUID> orders = new TreeSet<>();
+
 			public Customer(UUID i) {
 				super(i);
 			}
 			
-			private String name;
+			public Order newOrder() {
+				Order o = Order.table.ins(db);
+				o.customer = id;
+				orders.add(o.id);
+				return o;
+			}
 		}
-		
+
+		public static class Order extends BasicRec {
+			public static class T extends Tbl<Order> {				
+				public T(final String n) {
+					super(n);
+				}
+				
+				@Override
+				protected Order newRec(final UUID id) {
+					return new Order(id);
+				}
+			}
+			
+			public static final T table = new T("orders");		
+
+			public Order(UUID i) {
+				super(i);
+			}
+			
+			public UUID customer; 
+		}
+
 		public static final DB db = 
 			new DB(FileSystems.getDefault().getPath("./testdb/"));
 		
@@ -171,6 +206,14 @@ public class BasicRec implements Rec {
 			assertNotEquals(o, Customer.table.offs(c));
 		}
 
+		@Test
+		public void testSeqCol() {
+			Customer c = Customer.table.ins(db);
+			Order o = c.newOrder();
+			db.commit();
+			
+			assertEquals(o, Order.table.get(o.id, db));	
+		}
 		
 		@Test
 		public void testTrans() {

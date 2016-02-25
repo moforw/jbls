@@ -19,9 +19,8 @@ public class LongCol<RecT> extends Col<RecT, Long> {
 		return this;
 	}
 	
-	@SuppressWarnings("unchecked")
-	public void writeJson(final Rec r, final JsonGenerator json) {
-		long v = getVal((RecT)r);
+	@Override
+	public void writeJson(final Long v, final JsonGenerator json) {
 		json.write(name, v);
 	}
 }

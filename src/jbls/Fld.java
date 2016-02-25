@@ -1,25 +1,12 @@
 package jbls;
 
-public class Fld<RecT, ValT extends Comparable<ValT>> implements Comparable<Fld<RecT, ValT>> {
+import javax.json.stream.JsonGenerator;
+
+public abstract class Fld<RecT, ValT> implements Comparable<Fld<RecT, ValT>> {
 	public final String name;
 	
 	public Fld(final String n) {
 		name = n;
-	}
-
-	public int compareRecs(final RecT l, final RecT r) {
-		final ValT lv = getVal(l);
-		final ValT rv = getVal(r);
-		
-		if (lv == null && rv == null) {
-			return 0;
-		} 
-		
-		if (lv == null || rv == null) {
-			return (lv == null) ? -1 : 1;
-		}
-		
-		return getVal(l).compareTo(getVal(r));
 	}
 	
 	@Override
@@ -35,6 +22,10 @@ public class Fld<RecT, ValT extends Comparable<ValT>> implements Comparable<Fld<
 	public ValT getVal(final RecT r) {
 		return reader.val(r);
 	}
+
+	public String toJson(final ValT v) {
+		return v.toString();
+	}
 	
 	public Fld<RecT, ValT> write(Writer<RecT, ValT> w) {
 		writer = w;
@@ -44,7 +35,21 @@ public class Fld<RecT, ValT extends Comparable<ValT>> implements Comparable<Fld<
 	public void setVal(final RecT r, final ValT v) {
 		writer.setVal(r, v);
 	}
-	
+
+	public void writeJson(final ValT v, final JsonGenerator json) {
+		json.write(name, toJson(v));
+	}
+
+	@SuppressWarnings("unchecked")
+	public void writeJson(final Rec r, final JsonGenerator json) {
+		final ValT v = getVal((RecT)r);
+		if (v == null) {
+			json.writeNull(name);
+		} else {
+			writeJson(v, json);
+		}
+	}
+
 	private Reader<RecT, ValT> reader;
 	private Writer<RecT, ValT> writer;
 }

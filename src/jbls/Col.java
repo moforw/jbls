@@ -2,10 +2,7 @@ package jbls;
 
 import java.util.stream.Stream;
 
-import javax.json.stream.JsonGenerator;
-
-public abstract class Col<RecT, ValT extends Comparable<ValT>> 
-extends Fld<RecT, ValT> implements Def<RecT> {
+public class Col<RecT, ValT> extends Fld<RecT, ValT> implements Def<RecT> {
 	public Col(final String n) {
 		super(n);
 	}
@@ -14,5 +11,4 @@ extends Fld<RecT, ValT> implements Def<RecT> {
 		return Stream.of(this);
 	}
 	
-	public abstract void writeJson(final Rec r, final JsonGenerator json);
 }

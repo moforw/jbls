@@ -1,7 +1,6 @@
 package jbls;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface Rec extends Comparable<Rec> {
@@ -18,15 +17,5 @@ public interface Rec extends Comparable<Rec> {
 	@Override
 	default int compareTo(final Rec other) {
 		return id().compareTo(other.id());
-	}	
-
-	default <RecT> int compareTo(final RecT other, final Def<RecT> d) {
-		@SuppressWarnings("unchecked")
-		Optional<Integer> res = d.cols()
-			.map((c) -> c.compareRecs((RecT)this, other))
-			.filter((r) -> r != 0)
-			.findFirst();
-		
-		return (res.isPresent()) ? res.get() : 0; 
 	}	
 }

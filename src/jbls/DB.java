@@ -13,6 +13,9 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
+//TODO delete from temptbl in del()
+///TODO write ins/del test
+
 //TODO only open tbl files once per commit
 
 //TODO implement file loading
@@ -35,6 +38,12 @@ import javax.json.stream.JsonGenerator;
 ///take Col as constructor param
 
 //TODO add indexing test
+
+//TODO add RefCol
+///add Ref class 
+////id & RecT get()
+
+//TODO add MapCol
 
 public class DB {
 	public DB(final Path p) {

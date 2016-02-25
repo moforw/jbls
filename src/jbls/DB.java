@@ -13,10 +13,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-///TODO add MapCol<RecT, KeyT, ValT>
-///write as object
-///extends Col<RecT, Map<KeyT, ValT>>
-
 //TODO add RecCol
 ///store json inline
 ////since recs are singletons it will always be correct

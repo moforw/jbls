@@ -8,7 +8,7 @@ import javax.json.stream.JsonGenerator;
 public class MapCol<RecT extends Rec, KeyT, ValT> 
 extends Col<RecT, Stream<Map.Entry<KeyT, ValT>>>{
 	public MapCol(final Fld<RecT, KeyT> kf, final Fld<RecT, ValT> vf) {
-		super(String.format("%s_%s", kf.name, vf.name));
+		super(kf.name + vf.name);
 		keyFld = kf;
 		valFld = vf;
 	}

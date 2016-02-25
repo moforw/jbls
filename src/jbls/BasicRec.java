@@ -89,7 +89,8 @@ public class BasicRec implements Rec {
 					.write((c, v) -> c.name = v);
 
 				public final MapCol<Customer, Instant, UUID> Orders = 
-					mapCol(new TimeCol<Customer>("orderTime"), new IdCol<Customer>("lookup"))
+					mapCol(new TimeCol<Customer>("orderTime"), 
+						new IdCol<Customer>("Lookup"))
 					.read((c)     -> c.orders.entrySet().stream());
 				
 				public T(final String n) {

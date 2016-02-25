@@ -1,11 +1,17 @@
 package jbls;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
+import java.math.BigDecimal;
 import java.nio.file.FileSystems;
 import java.time.Instant;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import org.junit.Test;
@@ -82,9 +88,9 @@ public class BasicRec implements Rec {
 					.read((c)     -> c.name)
 					.write((c, v) -> c.name = v);
 
-				public final SeqCol<Customer, UUID> Orders = 
-					seqCol(new IdCol<Customer>("orders"))
-					.read((c)     -> c.orders.stream());
+				public final MapCol<Customer, Instant, UUID> Orders = 
+					mapCol(new TimeCol<Customer>("orderTime"), new IdCol<Customer>("lookup"))
+					.read((c)     -> c.orders.entrySet().stream());
 				
 				public T(final String n) {
 					super(n);
@@ -99,25 +105,30 @@ public class BasicRec implements Rec {
 			public static final T tbl = new T("customers");		
 
 			public String name;
-			public Set<UUID> orders = new TreeSet<>();
-
+			public Map<Instant, UUID> orders = new TreeMap<>();
+			
 			public Customer(UUID i) {
 				super(i);
 			}
 			
-			public Order newOrder() {
+			public Order newOrder(final BigDecimal a) {
 				Order o = Order.tbl.ins(db);
 				o.cust.set(this);
-				orders.add(o.id);
+				o.amnt = a;
+				orders.put(o.insTime, o.id);
 				return o;
 			}
 		}
 
 		public static class Order extends BasicRec {
 			public static class T extends Tbl<Order> {				
+				public final DeciCol<Order> Amnt = deciCol("amnt")
+					.read((a)     -> a.amnt)
+					.write((a, v) -> a.amnt = v);
+
 				public final RefCol<Order, Customer> Cust = 
-						refCol("cust", Customer.tbl)
-						.read((o) -> o.cust);
+					refCol("cust", Customer.tbl)
+					.read((o)     -> o.cust);
 
 				public T(final String n) {
 					super(n);
@@ -131,11 +142,12 @@ public class BasicRec implements Rec {
 			
 			public static final T tbl = new T("orders");		
 
+			public BigDecimal amnt;
+			public Ref<Order, Customer> cust = new Ref<>(tbl.Cust); 
+			
 			public Order(UUID i) {
 				super(i);
-			}
-			
-			public Ref<Order, Customer> cust = new Ref<>(tbl.Cust); 
+			}			
 		}
 
 		public static final DB db = 
@@ -213,7 +225,7 @@ public class BasicRec implements Rec {
 		@Test
 		public void testSeqCol() {
 			Customer c = Customer.tbl.ins(db);
-			Order o = c.newOrder();
+			Order o = c.newOrder(BigDecimal.valueOf(1000));
 			db.commit();
 			
 			assertEquals(o, Order.tbl.get(o.id, db));	

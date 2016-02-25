@@ -47,6 +47,10 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		return cols.stream();
 	}
 
+	public DeciCol<RecT> deciCol(final String n) {
+		return addCol(new DeciCol<RecT>(n));
+	}
+
 	public void del(final RecT r, final DB db) {
 		db.del(this, r);
 	}
@@ -83,6 +87,11 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 
 	public LongCol<RecT> longCol(final String n) {
 		return addCol(new LongCol<RecT>(n));
+	}
+
+	public <KeyT, ValT> MapCol<RecT, KeyT, ValT> 
+	mapCol(final Fld<RecT, KeyT> kf, final Fld<RecT, ValT> vf) {		
+		return addCol(new MapCol<>(kf, vf));
 	}
 
 	public Stream<Rec> recs() {

@@ -28,5 +28,5 @@ extends Col<RecT, Collection<ValT>>{
 		}
 	}
 	
-	private Fld<RecT, ValT> valFld;
+	private final Fld<RecT, ValT> valFld;
 }

@@ -13,6 +13,10 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
+//TODO add MapCol<RecT, KeyT, ValT>
+///write as object
+///extends Col<RecT, Map<KeyT, ValT>>
+
 //TODO implement file loading
 ///finish implementing Tbl.loadRec()
 ///add Tbl.loadOffs(path)
@@ -35,12 +39,6 @@ import javax.json.stream.JsonGenerator;
 ///take Col as constructor param
 
 //TODO add indexing test
-
-//TODO add RefCol
-///add Ref class 
-////id & RecT get()
-
-//TODO add MapCol
 
 public class DB {
 	public DB(final Path p) {

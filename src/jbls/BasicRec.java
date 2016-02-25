@@ -96,7 +96,7 @@ public class BasicRec implements Rec {
 				}
 			}
 			
-			public static final T table = new T("customers");		
+			public static final T tbl = new T("customers");		
 
 			public String name;
 			public Set<UUID> orders = new TreeSet<>();
@@ -106,8 +106,8 @@ public class BasicRec implements Rec {
 			}
 			
 			public Order newOrder() {
-				Order o = Order.table.ins(db);
-				o.customer = id;
+				Order o = Order.tbl.ins(db);
+				o.cust.set(this);
 				orders.add(o.id);
 				return o;
 			}
@@ -115,6 +115,10 @@ public class BasicRec implements Rec {
 
 		public static class Order extends BasicRec {
 			public static class T extends Tbl<Order> {				
+				public final RefCol<Order, Customer> Cust = 
+						refCol("cust", Customer.tbl)
+						.read((o) -> o.cust);
+
 				public T(final String n) {
 					super(n);
 				}
@@ -125,13 +129,13 @@ public class BasicRec implements Rec {
 				}
 			}
 			
-			public static final T table = new T("orders");		
+			public static final T tbl = new T("orders");		
 
 			public Order(UUID i) {
 				super(i);
 			}
 			
-			public UUID customer; 
+			public Ref<Order, Customer> cust = new Ref<>(tbl.Cust); 
 		}
 
 		public static final DB db = 
@@ -139,90 +143,90 @@ public class BasicRec implements Rec {
 		
 		@Test
 		public void testInsUpDel() {
-			Customer c = Customer.table.ins(db);
+			Customer c = Customer.tbl.ins(db);
 			assertNotNull(c.id);
 			assertTrue(c.insTime.compareTo(Instant.now()) <= 0);
 			assertTrue(c.upTime().compareTo(Instant.now()) <= 0);
 			assertEquals(1, c.rev());
-			assertEquals(c, db.tempTbl(Customer.table).get(c.id, db));
-			assertEquals(c, Customer.table.get(c.id, db));	
-			Customer.table.up(c, db);
+			assertEquals(c, db.tempTbl(Customer.tbl).get(c.id, db));
+			assertEquals(c, Customer.tbl.get(c.id, db));	
+			Customer.tbl.up(c, db);
 			assertEquals(2, c.rev());
 			assertTrue(c.upTime().compareTo(c.insTime) >= 0);
-			assertEquals(c, db.tempTbl(Customer.table).get(c.id, db));	
-			Customer.table.del(c, db);
+			assertEquals(c, db.tempTbl(Customer.tbl).get(c.id, db));	
+			Customer.tbl.del(c, db);
 			assertEquals(2, c.rev());
-			assertNull(db.tempTbl(Customer.table).get(c.id, db));	
+			assertNull(db.tempTbl(Customer.tbl).get(c.id, db));	
 		}
 
 		@Test
 		public void testIsDirty() {
-			Customer c = Customer.table.ins(db);
-			assertTrue(db.isDirty(Customer.table, c));
+			Customer c = Customer.tbl.ins(db);
+			assertTrue(db.isDirty(Customer.tbl, c));
 
 			db.commit();
-			assertFalse(db.isDirty(Customer.table, c));
+			assertFalse(db.isDirty(Customer.tbl, c));
 			
-			Customer.table.up(c, db);
-			assertTrue(db.isDirty(Customer.table, c));
+			Customer.tbl.up(c, db);
+			assertTrue(db.isDirty(Customer.tbl, c));
 
 			db.commit();
-			assertFalse(db.isDirty(Customer.table, c));			
+			assertFalse(db.isDirty(Customer.tbl, c));			
 		}
 
 		@Test
 		public void testCommit() {
-			Customer c = Customer.table.ins(db);
+			Customer c = Customer.tbl.ins(db);
 			db.commit();
-			assertNull(db.tempTbl(Customer.table).get(c.id, db));	
-			assertEquals(c, Customer.table.get(c.id, db));	
+			assertNull(db.tempTbl(Customer.tbl).get(c.id, db));	
+			assertEquals(c, Customer.tbl.get(c.id, db));	
 			
-			Customer.table.del(c, db);
+			Customer.tbl.del(c, db);
 			db.commit();
-			assertNull(db.tempTbl(Customer.table).get(c.id, db));	
-			assertNull(Customer.table.get(c.id, db));	
+			assertNull(db.tempTbl(Customer.tbl).get(c.id, db));	
+			assertNull(Customer.tbl.get(c.id, db));	
 		}
 
 		@Test
 		public void testGetDel() {
-			Customer c = Customer.table.ins(db);
+			Customer c = Customer.tbl.ins(db);
 			db.commit();
-			Customer.table.del(c, db);
-			assertTrue(db.isDel(Customer.table, c.id));				
-			assertNull(Customer.table.get(c.id, db));				
+			Customer.tbl.del(c, db);
+			assertTrue(db.isDel(Customer.tbl, c.id));				
+			assertNull(Customer.tbl.get(c.id, db));				
 		}
 
 		@Test
 		public void testPrevOffs() {
-			Customer c = Customer.table.ins(db);
+			Customer c = Customer.tbl.ins(db);
 			db.commit();			
-			long o = Customer.table.offs(c);
+			long o = Customer.tbl.offs(c);
 			assertNotEquals(-1, o);
 			
-			Customer.table.up(c, db);
+			Customer.tbl.up(c, db);
 			db.commit();
 			assertEquals(o, c.prevOffs());
-			assertNotEquals(-1, Customer.table.offs(c));
-			assertNotEquals(o, Customer.table.offs(c));
+			assertNotEquals(-1, Customer.tbl.offs(c));
+			assertNotEquals(o, Customer.tbl.offs(c));
 		}
 
 		@Test
 		public void testSeqCol() {
-			Customer c = Customer.table.ins(db);
+			Customer c = Customer.tbl.ins(db);
 			Order o = c.newOrder();
 			db.commit();
 			
-			assertEquals(o, Order.table.get(o.id, db));	
+			assertEquals(o, Order.tbl.get(o.id, db));	
 		}
 		
 		@Test
 		public void testTrans() {
 			Customer c;
 			try(final Trans tr = db.trans()) {
-				c = Customer.table.ins(db);
+				c = Customer.tbl.ins(db);
 			}
 			
-			assertNull(Customer.table.get(c.id, db));	
+			assertNull(Customer.tbl.get(c.id, db));	
 		}	
 	}
 }

@@ -89,8 +89,12 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		return recs.values().stream();
 	}
 
+	public <RefT extends Rec> RefCol<RecT, RefT> refCol(final String n, final Tbl<RefT> rt) {		
+		return addCol(new RefCol<>(n, rt));
+	}
+
 	public <ValT> SeqCol<RecT, ValT> seqCol(final Fld<RecT, ValT> fld) {		
-		return addCol(new SeqCol<RecT, ValT>(fld));
+		return addCol(new SeqCol<>(fld));
 	}
 
 	public StringCol<RecT> stringCol(final String n) {

@@ -13,6 +13,11 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
+//TODO add RecCol
+///store json inline
+
+//TODO change SeqCol to use Stream<ValT> in place of Collection<ValT>
+
 //TODO add MapCol<RecT, KeyT, ValT>
 ///write as object
 ///extends Col<RecT, Map<KeyT, ValT>>
@@ -38,8 +43,6 @@ import javax.json.stream.JsonGenerator;
 ///override in sub classes
 ///take Col as constructor param
 
-//TODO add indexing test
-
 public class DB {
 	public DB(final Path p) {
 		path = p;
@@ -49,6 +52,7 @@ public class DB {
 		tempTbls.entrySet()
 			.parallelStream()
 			.forEach((e) -> {
+				
 				e.getValue().recs()
 					.parallel()
 					.forEach((r) -> {
@@ -64,6 +68,7 @@ public class DB {
 						e.getKey().del(id);	
 						commitDel(e.getKey(), id);
 					});
+			
 			});
 
 		clearTemp();

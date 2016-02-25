@@ -84,7 +84,7 @@ public class BasicRec implements Rec {
 
 				public final SeqCol<Customer, UUID> Orders = 
 					seqCol(new IdCol<Customer>("orders"))
-					.read((c)     -> c.orders);
+					.read((c)     -> c.orders.stream());
 				
 				public T(final String n) {
 					super(n);

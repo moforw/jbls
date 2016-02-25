@@ -124,6 +124,14 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 				String.format("%s.jbo", name)));
 	}
 
+	public KeyCol<RecT> pubKeyCol(final String n) {
+		return addCol(new KeyCol<RecT>(KeyCol.KeyType.PUBLIC, n));		
+	}
+	
+	public KeyCol<RecT> privKeyCol(final String n) {
+		return addCol(new KeyCol<RecT>(KeyCol.KeyType.PRIVATE, n));		
+	}
+	
 	public Path recsPath(final Path root) {
 		return root.resolve(
 			FileSystems.getDefault().getPath(

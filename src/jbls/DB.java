@@ -13,14 +13,18 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-//TODO add RecCol
-///store json inline
-
 //TODO change SeqCol to use Stream<ValT> in place of Collection<ValT>
 
 //TODO add MapCol<RecT, KeyT, ValT>
 ///write as object
 ///extends Col<RecT, Map<KeyT, ValT>>
+
+//TODO add RecCol
+///store json inline
+////since recs are singletons it will always be correct
+///add Fld.load(rec, json)
+////override in RecCol
+////load into reftbl from inline json if not exists
 
 //TODO implement file loading
 ///finish implementing Tbl.loadRec()

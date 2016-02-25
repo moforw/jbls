@@ -2,19 +2,19 @@ package jbls;
 
 import javax.json.stream.JsonGenerator;
 
-public class StringCol<RecT> extends Col<RecT, String> {
-	public StringCol(final String n) {
+public class StrCol<RecT> extends Col<RecT, String> {
+	public StrCol(final String n) {
 		super(n);
 	}
 
 	@Override
-	public StringCol<RecT> read(final Reader<RecT, String> r) {
+	public StrCol<RecT> read(final Reader<RecT, String> r) {
 		super.read(r);
 		return this;
 	}
 
 	@Override
-	public StringCol<RecT> write(final Writer<RecT, String> w) {
+	public StrCol<RecT> write(final Writer<RecT, String> w) {
 		super.write(w);
 		return this;
 	}

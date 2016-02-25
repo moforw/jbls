@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.junit.Test;
 
@@ -84,14 +85,14 @@ public class BasicRec implements Rec {
 	public static class Tests {		
 		public static class Customer extends BasicRec {
 			public static class T extends Tbl<Customer> {		
-				public final StringCol<Customer> Name = stringCol("name")
+				public final StrCol<Customer> Name = strCol("name")
 					.read((c)     -> c.name)
 					.write((c, v) -> c.name = v);
 
 				public final MapCol<Customer, Instant, UUID> Orders = 
 					mapCol(new TimeCol<Customer>("orderTime"), 
 						new IdCol<Customer>("Lookup"))
-					.read((c)     -> c.orders.entrySet().stream());
+					.read((c)     -> c.orderLookup.entrySet().stream());
 				
 				public T(final String n) {
 					super(n);
@@ -106,7 +107,6 @@ public class BasicRec implements Rec {
 			public static final T tbl = new T("customers");		
 
 			public String name;
-			public Map<Instant, UUID> orders = new TreeMap<>();
 			
 			public Customer(UUID i) {
 				super(i);
@@ -116,9 +116,18 @@ public class BasicRec implements Rec {
 				Order o = Order.tbl.ins(db);
 				o.cust.set(this);
 				o.amnt = a;
-				orders.put(o.insTime, o.id);
+				orderLookup.put(o.insTime, o.id);
 				return o;
 			}
+			
+			public Stream<Order> orders() {
+				return orderLookup
+					.values()
+					.stream()
+					.map((id) -> Order.tbl.get(id));
+			}
+		
+			private Map<Instant, UUID> orderLookup = new TreeMap<>();
 		}
 
 		public static class Order extends BasicRec {
@@ -224,12 +233,13 @@ public class BasicRec implements Rec {
 		}
 
 		@Test
-		public void testSeqCol() {
+		public void testMapCol() {
 			Customer c = Customer.tbl.ins(db);
 			Order o = c.newOrder(BigDecimal.valueOf(1000));
 			db.commit();
 			
 			assertEquals(o, Order.tbl.get(o.id, db));	
+			assertEquals(o, c.orders().findFirst().get());
 		}
 		
 		@Test

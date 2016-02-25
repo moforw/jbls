@@ -106,8 +106,8 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		return addCol(new SeqCol<>(fld));
 	}
 
-	public StringCol<RecT> stringCol(final String n) {
-		return addCol(new StringCol<RecT>(n));
+	public StrCol<RecT> strCol(final String n) {
+		return addCol(new StrCol<RecT>(n));
 	}
 
 	public TimeCol<RecT> timeCol(final String n) {
@@ -121,13 +121,13 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 	public Path offsPath(final Path root) {
 		return root.resolve(
 			FileSystems.getDefault().getPath(
-				String.format("%s.fbo", name)));
+				String.format("%s.jbo", name)));
 	}
 
 	public Path recsPath(final Path root) {
 		return root.resolve(
 			FileSystems.getDefault().getPath(
-				String.format("%s.fbr", name)));
+				String.format("%s.jbr", name)));
 	}
 
 	public void up(final RecT r, final DB db) {

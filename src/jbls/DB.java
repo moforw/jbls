@@ -19,6 +19,9 @@ import javax.json.stream.JsonGenerator;
 ///add Fld.load(rec, json)
 ////override in RecCol
 ////load into reftbl from inline json if not exists
+///add Prod class in Tests
+////StrCol name
+////add RecCol Order.Prod/prod
 
 //TODO implement file loading
 ///finish implementing Tbl.loadRec()
@@ -27,6 +30,11 @@ import javax.json.stream.JsonGenerator;
 ///add tests
 
 //TODO only open tbl files once per commit
+
+//TODO add RevIdx<RecT, ValT>
+///convert Tbl.offs to RevIdx<RecT, Long>
+///change RefCol to take a RevIdx instead of Tbl for lookup
+///add stream(set<UUID>), return stream of ValT
 
 //TODO add aes encryption
 

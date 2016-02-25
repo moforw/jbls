@@ -13,16 +13,13 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-//TODO delete from temptbl in del()
-///TODO write ins/del test
-
-//TODO only open tbl files once per commit
-
 //TODO implement file loading
 ///finish implementing Tbl.loadRec()
 ///add Tbl.loadOffs(path)
 ///add Tbl.loadRecs(path)
 ///add tests
+
+//TODO only open tbl files once per commit
 
 //TODO add aes encryption
 

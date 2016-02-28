@@ -1,13 +1,15 @@
 package jbls;
 
-import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 
 public class KeyCol<RecT> extends Col<RecT, Key> {
@@ -21,6 +23,33 @@ public class KeyCol<RecT> extends Col<RecT, Key> {
 	}
 
 	@Override
+	public Key fromJson(final String v) {
+		throw new RuntimeException("Not supported!");
+	}
+	
+	@Override
+	public void load(final RecT rec, final JsonObject json) {
+		final JsonArray jsa = json.getJsonArray(name);
+		
+		final byte[] bs = new byte[jsa.size()];
+		
+		int i = 0;
+		for (final JsonValue v: jsa) {
+			bs[i] = (byte)((JsonNumber)v).intValue();
+			i++;
+		};
+		
+		try {
+			setVal(rec, 
+				KeyFactory.getInstance("RSA").generatePublic(
+					new X509EncodedKeySpec(bs)));
+		} catch (final InvalidKeySpecException | NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+		
+	@Override
 	public KeyCol<RecT> read(final Reader<RecT, Key> r) {
 		super.read(r);
 		return this;
@@ -33,41 +62,14 @@ public class KeyCol<RecT> extends Col<RecT, Key> {
 	}
 	
 	@Override
-	public void writeJson(final Key v, final JsonGenerator json) {
-		final KeyFactory kf;
-		
-		try {
-			kf = KeyFactory.getInstance("RSA");
-		} catch (final NoSuchAlgorithmException e) {
-			throw new RuntimeException(e);
-		}
-
-		final BigInteger mod;
-		final BigInteger exp;
-		
-		if (keyType == KeyType.PRIVATE) {
-			try {
-				final RSAPrivateKeySpec spec = kf.getKeySpec(v, RSAPrivateKeySpec.class);
-				mod = spec.getModulus();
-				exp = spec.getPrivateExponent();
-			} catch (final InvalidKeySpecException e) {
-				throw new RuntimeException(e);
-			}
-			
-		} else {
-			try {
-				final RSAPublicKeySpec spec = kf.getKeySpec(v, RSAPublicKeySpec.class);
-				mod = spec.getModulus();
-				exp = spec.getPublicExponent();
-			} catch (final InvalidKeySpecException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-		final StringBuilder buf = new StringBuilder();
-	    buf.append(mod);
-	    buf.append(exp);		
-		
-	    json.write(name, buf.toString());
+	public void writeJson(final Key v, final JsonGenerator json) {		
+	    json.writeStartArray(name);
+	    try {
+	    	for (final byte b: v.getEncoded()) {
+	    		json.write(b);
+	    	}
+	    } finally {
+	    	json.writeEnd();
+	    }
 	}
 }

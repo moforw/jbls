@@ -8,6 +8,11 @@ public class TimeCol<RecT> extends Col<RecT, Instant> {
 	}
 
 	@Override
+	public Instant fromJson(final String v) {
+        return Instant.parse(v);
+	}	
+
+	@Override
 	public TimeCol<RecT> read(final Reader<RecT, Instant> r) {
 		super.read(r);
 		return this;

@@ -10,6 +10,8 @@ import static org.junit.Assert.assertTrue;
 import java.math.BigDecimal;
 import java.nio.file.FileSystems;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -83,6 +85,9 @@ public class BasicRec implements Rec {
 	private long prevOffs;
 	
 	public static class Tests {		
+		public static final DB db = 
+				new DB(FileSystems.getDefault().getPath("./testdb/"));
+
 		public static class Customer extends BasicRec {
 			public static class T extends Tbl<Customer> {		
 				public final StrCol<Customer> Name = strCol("name")
@@ -92,7 +97,7 @@ public class BasicRec implements Rec {
 				public final MapCol<Customer, Instant, UUID> Orders = 
 					mapCol(new TimeCol<Customer>("orderTime"), 
 						new IdCol<Customer>("Lookup"))
-					.read((c)     -> c.orderLookup.entrySet().stream());
+					.read((c)     -> c.orderLookup);
 				
 				public T(final String n) {
 					super(n);
@@ -112,10 +117,9 @@ public class BasicRec implements Rec {
 				super(i);
 			}
 			
-			public Order newOrder(final BigDecimal a) {
+			public Order newOrder() {
 				Order o = Order.tbl.ins(db);
 				o.cust.set(this);
-				o.amnt = a;
 				orderLookup.put(o.insTime, o.id);
 				return o;
 			}
@@ -124,7 +128,7 @@ public class BasicRec implements Rec {
 				return orderLookup
 					.values()
 					.stream()
-					.map((id) -> Order.tbl.get(id));
+					.map((id) -> Order.tbl.get(id, db));
 			}
 		
 			private Map<Instant, UUID> orderLookup = new TreeMap<>();
@@ -132,14 +136,18 @@ public class BasicRec implements Rec {
 
 		public static class Order extends BasicRec {
 			public static class T extends Tbl<Order> {				
-				public final DeciCol<Order> Amnt = deciCol("amnt")
-					.read((a)     -> a.amnt)
-					.write((a, v) -> a.amnt = v);
+				public final DeciCol<Order> TotAmnt = deciCol("totAmnt")
+					.read((a)     -> a.totAmnt)
+					.write((a, v) -> a.totAmnt = v);
 
 				public final RefCol<Order, Customer> Cust = 
 					refCol("cust", Customer.tbl)
 					.read((o)     -> o.cust);
 
+				public final SeqCol<Order, UUID> Items = 
+					seqCol(new IdCol<Order>("items"))
+					.read((i)     -> i.items);
+			
 				public T(final String n) {
 					super(n);
 				}
@@ -152,16 +160,93 @@ public class BasicRec implements Rec {
 			
 			public static final T tbl = new T("orders");		
 
-			public BigDecimal amnt;
 			public Ref<Order, Customer> cust = new Ref<>(tbl.Cust); 
+			public List<UUID> items = new ArrayList<>();
 			
 			public Order(UUID i) {
 				super(i);
 			}			
+
+			public Item newItem(final Product p, final BigDecimal a) {
+				Item i = Item.tbl.ins(db);
+				i.owner.set(this);
+				i.prod = p;
+				i.amnt = a;
+				items.add(i.id);
+				totAmnt = totAmnt.add(a);
+				return i;
+			}
+			
+			public Stream<Item> items() {
+				return items
+					.stream()
+					.map((id) -> Item.tbl.get(id, db));
+			}	
+
+			private BigDecimal totAmnt = BigDecimal.ZERO;
 		}
 
-		public static final DB db = 
-			new DB(FileSystems.getDefault().getPath("./testdb/"));
+		public static class Product extends BasicRec {
+			public static class T extends Tbl<Product> {				
+				public final StrCol<Product> Name = strCol("name")
+					.read((p)     -> p.name)
+					.write((p, v) -> p.name = v);
+
+				public T(final String n) {
+					super(n);
+				}
+				
+				@Override
+				protected Product newRec(final UUID id) {
+					return new Product(id);
+				}
+			}
+			
+			public static final T tbl = new T("prods");		
+
+			public String name;
+						
+			public Product(UUID i) {
+				super(i);
+			}			
+		}
+
+		public static class Item extends BasicRec {
+			public static class T extends Tbl<Item> {				
+				public final DeciCol<Item> Amnt = deciCol("amnt")
+					.read((i)     -> i.amnt)
+					.write((i, v) -> i.amnt = v);
+
+				public final RefCol<Item, Order> Owner = 
+					refCol("owner", Order.tbl)
+					.read((i)     -> i.owner);
+
+				public final RecCol<Item, Product> Prod = recCol("prod", Product.tbl)
+					.read((i)     -> i.prod)
+					.write((i, v) -> i.prod = v);
+				
+				
+				public T(final String n) {
+					super(n);
+				}
+				
+				@Override
+				protected Item newRec(final UUID id) {
+					return new Item(id);
+				}
+			}
+			
+			public static final T tbl = new T("items");		
+			
+			public final Ref<Item, Order> owner = new Ref<>(tbl.Owner); 
+					
+			public Item(UUID i) {
+				super(i);
+			}			
+
+			private BigDecimal amnt;
+			private Product prod; 
+		}
 		
 		@Test
 		public void testInsUpDel() {
@@ -235,7 +320,10 @@ public class BasicRec implements Rec {
 		@Test
 		public void testMapCol() {
 			Customer c = Customer.tbl.ins(db);
-			Order o = c.newOrder(BigDecimal.valueOf(1000));
+			Order o = c.newOrder();
+			Product p = Product.tbl.ins(db);
+			p.name = "Foo";
+			o.newItem(p, BigDecimal.valueOf(1000));
 			db.commit();
 			
 			assertEquals(o, Order.tbl.get(o.id, db));	

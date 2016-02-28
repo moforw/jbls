@@ -8,6 +8,11 @@ public class LongCol<RecT> extends Col<RecT, Long> {
 	}
 
 	@Override
+	public Long fromJson(final String v) {
+        return Long.valueOf(v);
+	}	
+	
+	@Override
 	public LongCol<RecT> read(final Reader<RecT, Long> r) {
 		super.read(r);
 		return this;

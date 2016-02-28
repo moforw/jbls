@@ -13,23 +13,17 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-//TODO add RecCol
-///store json inline
-////since recs are singletons it will always be correct
-///add Fld.load(rec, json)
-////override in RecCol
-////load into reftbl from inline json if not exists
-///add Prod class in Tests
-////StrCol name
-////add RecCol Order.Prod/prod
+//TODO log rec with deleted = true on delete
+/*if (o.get("deleted") == JsonValue.TRUE) {
+recs.remove(UUID.fromString(obj.getString("id")));
+} */
+
+//TODO only open tbl files once per commit
 
 //TODO implement file loading
-///finish implementing Tbl.loadRec()
 ///add Tbl.loadOffs(path)
 ///add Tbl.loadRecs(path)
 ///add tests
-
-//TODO only open tbl files once per commit
 
 //TODO add RevIdx<RecT, ValT>
 ///convert Tbl.offs to RevIdx<RecT, Long>
@@ -50,6 +44,8 @@ import javax.json.stream.JsonGenerator;
 ///take Col as constructor param
 
 public class DB {
+	public final Path path;	
+	
 	public DB(final Path p) {
 		path = p;
 	}
@@ -82,7 +78,7 @@ public class DB {
 
 	public long commitRec(final Tbl<?> t, Rec r) {
 		try {
-			final File f = new File(t.recsPath(path).toString());
+			final File f = new File(t.recsPath(this).toString());
 			f.createNewFile();
 			
 			try (final FileOutputStream fs = new FileOutputStream(f, true)) {
@@ -108,7 +104,7 @@ public class DB {
 
 	public void commitOffs(final Tbl<?> t, final UUID id, long offs) {		
 		try (final FileWriter fw = 
-				new FileWriter(t.offsPath(path).toString(), true);
+				new FileWriter(t.offsPath(this).toString(), true);
 				JsonGenerator json = Json.createGenerator(fw)) {
 			json.writeStartObject();
 			json.write("id", id.toString());
@@ -122,11 +118,11 @@ public class DB {
 
 	public void commitDel(final Tbl<?> t, final UUID id) {		
 		try (final FileWriter fw = 
-				new FileWriter(t.offsPath(path).toString(), true);
+				new FileWriter(t.offsPath(this).toString(), true);
 				JsonGenerator json = Json.createGenerator(fw)) {
 			json.writeStartObject();
 			json.write("id", id.toString());
-			json.writeNull("offs");
+			json.write("deleted", true);
 			json.writeEnd();
 			fw.write('\n');
 		} catch (final IOException e) {
@@ -152,7 +148,7 @@ public class DB {
 			return false;
 		}
 		
-		return tt.get(r.id()) != null;
+		return tt.basicGet(r.id(), this) != null;
 	}
 
 	public void rollback() {
@@ -184,6 +180,5 @@ public class DB {
 		tempTbls.values().parallelStream().forEach((tt) -> tt.clear());
 	}
 	
-	private final Path path;
 	private Map<Tbl<?>, TempTbl<?>> tempTbls = new ConcurrentSkipListMap<>();
 }

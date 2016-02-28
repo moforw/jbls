@@ -7,9 +7,9 @@ public class Ref<RecT extends Rec, RefT extends Rec> {
 		col = c;
 	}
 
-	public RefT get() {
+	public RefT get(final DB db) {
 		if (rec == null) {
-			rec = col.refTbl.get(id); 
+			rec = col.refTbl.get(id, db); 
 		}
 		
 		return rec;

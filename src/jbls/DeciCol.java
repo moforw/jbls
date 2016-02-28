@@ -1,12 +1,25 @@
 package jbls;
 
 import java.math.BigDecimal;
-
-import javax.json.stream.JsonGenerator;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 
 public class DeciCol<RecT> extends Col<RecT, BigDecimal> {
+	public static final DecimalFormat fmt = (DecimalFormat)NumberFormat.getInstance();
+    
+	{
+    	fmt.setParseBigDecimal(true);
+    }
+
+	
 	public DeciCol(final String n) {
 		super(n);
+	}
+	
+	@Override
+	public BigDecimal fromJson(final String v) {
+        return (BigDecimal)fmt.parse(v, new ParsePosition(0));
 	}
 
 	@Override
@@ -22,7 +35,7 @@ public class DeciCol<RecT> extends Col<RecT, BigDecimal> {
 	}
 	
 	@Override
-	public void writeJson(final BigDecimal v, final JsonGenerator json) {
-		json.write(name, v);
+	public String toJson(final BigDecimal v) {
+		return v.toString();
 	}
 }

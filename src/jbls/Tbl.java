@@ -1,5 +1,10 @@
 package jbls;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Map;
@@ -9,6 +14,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Stream;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 import javax.json.stream.JsonGenerator;
 
 public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, Def<RecT> {
@@ -62,9 +70,9 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 			return null;
 		}
 		
-		RecT r = tt.get(id);
+		RecT r = tt.basicGet(id, db);
 		
-		return (r == null) ? get(id) : r;
+		return (r == null) ? basicGet(id, db) : r;
 	}
 
 	public IdCol<RecT> idCol(final String n) {
@@ -98,7 +106,13 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		return recs.values().stream();
 	}
 
-	public <RefT extends Rec> RefCol<RecT, RefT> refCol(final String n, final Tbl<RefT> rt) {		
+	public <ValT extends Rec> RecCol<RecT, ValT> 
+	recCol(final String n, final Tbl<ValT> vt) {		
+		return addCol(new RecCol<>(n, vt));
+	}
+
+	public <RefT extends Rec> RefCol<RecT, RefT> 
+	refCol(final String n, final Tbl<RefT> rt) {		
 		return addCol(new RefCol<>(n, rt));
 	}
 
@@ -118,8 +132,8 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		return offs.containsKey(r.id()) ? offs.get(r.id()) : -1;
 	}
 	
-	public Path offsPath(final Path root) {
-		return root.resolve(
+	public Path offsPath(final DB db) {
+		return db.path.resolve(
 			FileSystems.getDefault().getPath(
 				String.format("%s.jbo", name)));
 	}
@@ -132,8 +146,8 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		return addCol(new KeyCol<RecT>(KeyCol.KeyType.PRIVATE, n));		
 	}
 	
-	public Path recsPath(final Path root) {
-		return root.resolve(
+	public Path recsPath(final DB db) {
+		return db.path.resolve(
 			FileSystems.getDefault().getPath(
 				String.format("%s.jbr", name)));
 	}
@@ -144,7 +158,7 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 
 	public void writeJson(final Rec r, final JsonGenerator json) {
 		for (final Col<?, ?> c: cols) {
-			c.writeJson(r, json);
+			c.writeRecJson(r, json);
 		}
 	}
 	
@@ -168,20 +182,40 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		recs.remove(id);
 	}
 	
-	protected RecT get(final UUID id) {
+	protected RecT basicGet(final UUID id, final DB db) {
 		@SuppressWarnings("unchecked")
 		final RecT r = (RecT)recs.get(id);	
-		return (r == null) ? loadRec(id) : r;
+		return (r == null) ? load(id, db) : r;
 	}
 
-	protected RecT loadRec(final UUID id) {
-		if (!offs.containsKey(id)) {
+	protected RecT load(final JsonObject json) {
+		RecT r = newRec(Id.readJson(json));
+		cols().forEach((c) -> { 
+			if (c != Id && c.writer() != null) { 
+				c.load(r, json);
+			}
+		});
+		return r;
+	}
+
+	
+	protected RecT load(final UUID id, final DB db) {
+		final Long o = offs.get(id);
+		
+		if (o == null) {
 			return null;
 		}
 		
-		//TODO load rec from offs
-		
-		return null;
+		try (final FileInputStream fs = new FileInputStream(new File(recsPath(db).toString()))) {
+			fs.getChannel().position(o);
+		    BufferedReader reader = new BufferedReader(new InputStreamReader(fs));
+		    			
+	    	try (JsonReader json = Json.createReader(reader)) {
+		    	return load(json.readObject());
+	    	}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	protected void setPrevOffs(final Rec r) {

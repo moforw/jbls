@@ -8,6 +8,11 @@ public class IdCol<RecT> extends Col<RecT, UUID> {
 	}
 
 	@Override
+	public UUID fromJson(final String v) {
+        return UUID.fromString(v);
+	}	
+	
+	@Override
 	public IdCol<RecT> read(final Reader<RecT, UUID> r) {
 		super.read(r);
 		return this;

@@ -8,6 +8,11 @@ public class StrCol<RecT> extends Col<RecT, String> {
 	}
 
 	@Override
+	public String fromJson(final String v) {
+        return v;
+	}	
+
+	@Override
 	public StrCol<RecT> read(final Reader<RecT, String> r) {
 		super.read(r);
 		return this;

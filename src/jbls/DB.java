@@ -13,6 +13,10 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
+//TODO extract Tbl.load(UUID) && load(long offs)
+
+//TOOD add Tbl.loadPrev(Rec)
+
 //TODO log rec with deleted = true on delete
 /*if (o.get("deleted") == JsonValue.TRUE) {
 recs.remove(UUID.fromString(obj.getString("id")));

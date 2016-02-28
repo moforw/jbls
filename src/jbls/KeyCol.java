@@ -4,6 +4,7 @@ import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.json.JsonArray;
@@ -40,9 +41,13 @@ public class KeyCol<RecT> extends Col<RecT, Key> {
 		};
 		
 		try {
-			setVal(rec, 
-				KeyFactory.getInstance("RSA").generatePublic(
-					new X509EncodedKeySpec(bs)));
+			final Key k = (keyType == KeyType.PRIVATE)
+				? KeyFactory.getInstance("RSA").generatePrivate(
+					new PKCS8EncodedKeySpec(bs))
+				: KeyFactory.getInstance("RSA").generatePublic(
+					new X509EncodedKeySpec(bs));
+			
+			setVal(rec, k);
 		} catch (final InvalidKeySpecException | NoSuchAlgorithmException e) {
 			throw new RuntimeException(e);
 		}

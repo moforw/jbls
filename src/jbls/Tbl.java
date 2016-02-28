@@ -135,7 +135,7 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 	public Path offsPath(final DB db) {
 		return db.path.resolve(
 			FileSystems.getDefault().getPath(
-				String.format("%s.jbo", name)));
+				String.format("%s.jbi", name)));
 	}
 
 	public KeyCol<RecT> pubKeyCol(final String n) {
@@ -149,7 +149,7 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 	public Path recsPath(final DB db) {
 		return db.path.resolve(
 			FileSystems.getDefault().getPath(
-				String.format("%s.jbr", name)));
+				String.format("%s.jbt", name)));
 	}
 
 	public void up(final RecT r, final DB db) {

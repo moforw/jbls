@@ -15,28 +15,32 @@ import javax.json.stream.JsonGenerator;
 
 //TODO extract Tbl.load(UUID) && load(long offs)
 
-//TOOD add Tbl.loadPrev(Rec)
-
-//TODO log rec with deleted = true on delete
-/*if (o.get("deleted") == JsonValue.TRUE) {
-recs.remove(UUID.fromString(obj.getString("id")));
-} */
-
+//TODO rename offs file to '.jbi', recs to '.jbt'
 //TODO only open tbl files once per commit
+//TODO log rec with "jbl:del" = true on del
 
-//TODO implement file loading
-///add Tbl.loadOffs(path)
-///add Tbl.loadRecs(path)
-///add tests
+//TODO rename KeyCol to BasicKeyCol<RecT, KeyT>
+///add PubKeyCol & PrivKeyCol
 
 //TODO add RevIdx<RecT, ValT>
 ///convert Tbl.offs to RevIdx<RecT, Long>
 ///change RefCol to take a RevIdx instead of Tbl for lookup
 ///add stream(set<UUID>), return stream of ValT
 
+//TODO implement file loading
+///add Tbl.loadRecs(db)
+///add Tbl.loadOffs(db)
+///add tests
+
+/*if (o.get("deleted") == JsonValue.TRUE) {
+recs.remove(UUID.fromString(obj.getString("id")));
+} */
+
 //TODO add aes encryption
+///check bookmark
 
 //TODO convert Albaum to use jbls
+///one table for facts
 
 //TODO add Idx / UIdx / MIdx
 ///use concurrent maps / sets
@@ -126,7 +130,7 @@ public class DB {
 				JsonGenerator json = Json.createGenerator(fw)) {
 			json.writeStartObject();
 			json.write("id", id.toString());
-			json.write("deleted", true);
+			json.write("sys:del", true);
 			json.writeEnd();
 			fw.write('\n');
 		} catch (final IOException e) {

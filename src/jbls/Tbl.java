@@ -20,17 +20,17 @@ import javax.json.JsonReader;
 import javax.json.stream.JsonGenerator;
 
 public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, Def<RecT> {
-	public final IdCol<RecT>   Id =       idCol(   "id")
+	public final IdCol<RecT>   Id =       idCol(   "sys:id")
 		.read((r)     -> r.id());
-	public final TimeCol<RecT> InTime =   timeCol( "inTime")
+	public final TimeCol<RecT> InTime =   timeCol( "sys:inTime")
 		.read((r)     -> r.insTime());
-	public final LongCol<RecT>  PrevOffs = longCol("prevOffs")
+	public final LongCol<RecT>  PrevOffs = longCol("sys:prevOffs")
 		.read((r)     -> r.prevOffs())
 		.write((r, v) -> r.setPrevOffs(v));	
-	public final IntCol<RecT>  Rev =       intCol( "rev")
+	public final IntCol<RecT>  Rev =       intCol( "sys:rev")
 		.read((r)     -> r.rev())
 		.write((r, v) -> r.setRev(v));	
-	public final TimeCol<RecT> UpTime =    timeCol("upTime")
+	public final TimeCol<RecT> UpTime =    timeCol("sys:upTime")
 		.read((r)     -> r.upTime())
 		.write((r, v) -> r.setUpTime(v));
 		

@@ -14,10 +14,8 @@ import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
 //TODO extract Tbl.load(UUID) && load(long offs)
-
-//TODO rename offs file to '.jbi', recs to '.jbt'
 //TODO only open tbl files once per commit
-//TODO log rec with "jbl:del" = true on del
+//TODO log rec with "sys:del" = true on del
 
 //TODO rename KeyCol to BasicKeyCol<RecT, KeyT>
 ///add PubKeyCol & PrivKeyCol
@@ -30,9 +28,10 @@ import javax.json.stream.JsonGenerator;
 //TODO implement file loading
 ///add Tbl.loadRecs(db)
 ///add Tbl.loadOffs(db)
+///handle sys:del
 ///add tests
 
-/*if (o.get("deleted") == JsonValue.TRUE) {
+/*if (o.get("sys:del") == JsonValue.TRUE) {
 recs.remove(UUID.fromString(obj.getString("id")));
 } */
 

@@ -1,11 +1,13 @@
 package jbls;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +19,7 @@ import java.util.stream.Stream;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 
 public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, Def<RecT> {
@@ -97,9 +100,50 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		return addCol(new LongCol<RecT>(n));
 	}
 
-	public <KeyT, ValT> MapCol<RecT, KeyT, ValT> 
-	mapCol(final Fld<RecT, KeyT> kf, final Fld<RecT, ValT> vf) {		
-		return addCol(new MapCol<>(kf, vf));
+	public void loadOffs(final DB db) {
+		try (InputStream in = Files.newInputStream(offsPath(db));
+		    BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+		    String line;
+		    
+		    while ((line = reader.readLine()) != null) {
+		    	if (line.compareTo(" ") > 0) {
+			    	try (JsonReader json = Json.createReader(new StringReader(line))) {
+				    	final JsonObject jso = json.readObject();
+				    	final UUID id = Id.fromJson(jso.get("id"));
+				    	
+				    	if (jso.get("del") == JsonValue.TRUE) {
+							offs.remove(id);
+				    	} else {
+				    		offs.put(id, jso.getJsonNumber("offs").longValue());
+				    	}
+			    	}
+		    	}
+		    }		    
+		} catch (IOException e) {
+		    throw new RuntimeException(e);
+		}
+	}
+
+	public void loadRecs(final DB db) {
+		try (InputStream in = Files.newInputStream(recsPath(db));
+		    BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+		    String line;
+		    
+		    while ((line = reader.readLine()) != null) {
+		    	if (line.compareTo(" ") > 0) {
+			    	try (JsonReader json = Json.createReader(new StringReader(line))) {
+				    	final JsonObject jso = json.readObject();
+				    	load(jso, db);
+			    	}
+		    	}
+		    }		    
+		} catch (IOException e) {
+		    throw new RuntimeException(e);
+		}
+	}
+	
+	public <ValT> MapCol<RecT, ValT> mapCol(final Fld<RecT, ValT> vf) {		
+		return addCol(new MapCol<>(vf));
 	}
 
 	public Stream<Rec> recs() {
@@ -128,7 +172,7 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		return addCol(new TimeCol<RecT>(n));
 	}
 
-	public long offs(final RecT r) {
+	public long offs(final Rec r) {
 		return offs.containsKey(r.id()) ? offs.get(r.id()) : -1;
 	}
 	
@@ -162,9 +206,10 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		}
 	}
 	
-	protected void clear() {
+	public Tbl<RecT> clear() {
 		recs.clear();
 		offs.clear();
+		return this;
 	}
 
 	protected TempTbl<RecT> temp(final String n) {
@@ -188,34 +233,57 @@ public abstract class Tbl<RecT extends Rec> implements Comparable<Tbl<RecT>>, De
 		return (r == null) ? load(id, db) : r;
 	}
 
-	protected RecT load(final JsonObject json) {
-		RecT r = newRec(Id.readJson(json));
-		cols().forEach((c) -> { 
-			if (c != Id && c.writer() != null) { 
-				c.load(r, json);
+	public RecT load(final JsonObject json, final DB db) {
+		final UUID id = Id.readJson(json);
+		
+		if (json.get("sys:del") == JsonValue.TRUE) {
+			offs.remove(id);
+			recs.remove(id);
+			return null;
+    	} else {
+	
+			RecT r = newRec(id);
+			
+			cols().forEach((c) -> { 
+				if (c != Id && c.writer() != null) { 
+					c.load(r, json, db);
+				}
+			});
+			
+			@SuppressWarnings("unchecked")
+			final RecT prev = (RecT)recs.get(r.id());
+			
+			if (prev == null || prev.rev() < r.rev()) {
+				recs.put(r.id(), r);			
+				return r;
 			}
-		});
-		return r;
+			
+			return prev;
+    	}
 	}
 
+	public RecT load(final Path p, final long offs, final DB db) {
+		try (final FileInputStream fs = new FileInputStream(p.toFile())) {
+			fs.getChannel().position(offs);
+		    BufferedReader reader = 
+		    	new BufferedReader(new InputStreamReader(fs));
+		    			
+	    	try (JsonReader json = Json.createReader(reader)) {
+		    	return load(json.readObject(), db);
+	    	}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
 	
-	protected RecT load(final UUID id, final DB db) {
+	public RecT load(final UUID id, final DB db) {
 		final Long o = offs.get(id);
 		
 		if (o == null) {
 			return null;
 		}
 		
-		try (final FileInputStream fs = new FileInputStream(new File(recsPath(db).toString()))) {
-			fs.getChannel().position(o);
-		    BufferedReader reader = new BufferedReader(new InputStreamReader(fs));
-		    			
-	    	try (JsonReader json = Json.createReader(reader)) {
-		    	return load(json.readObject());
-	    	}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		return load(recsPath(db), o, db);		
 	}
 
 	protected void setPrevOffs(final Rec r) {

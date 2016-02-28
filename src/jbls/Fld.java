@@ -16,7 +16,7 @@ public abstract class Fld<RecT, ValT> implements Comparable<Fld<RecT, ValT>> {
 		return name.compareTo(other.name);
 	}	
 
-	public abstract ValT fromJson(final String v);
+	public abstract ValT fromJson(final JsonValue v);
 
 	public Fld<RecT, ValT> read(Reader<RecT, ValT> r) {
 		reader = r;
@@ -27,13 +27,13 @@ public abstract class Fld<RecT, ValT> implements Comparable<Fld<RecT, ValT>> {
 		return reader.val(r);
 	}
 	
-	public void load(final RecT r, final JsonObject json) {
+	public void load(final RecT r, final JsonObject json, final DB db) {
 		setVal(r, readJson(json));
 	}
 	
 	public ValT readJson(final JsonObject o, String k) {
 		final JsonValue v = o.get(k);
-		return (v == JsonValue.NULL) ? null : fromJson(o.getString(k));
+		return (v == null || v == JsonValue.NULL) ? null : fromJson(v);
 	}
 
 	public ValT readJson(final JsonObject o) {

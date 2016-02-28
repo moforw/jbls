@@ -11,15 +11,10 @@ public abstract class TempTbl<RecT extends Rec> extends Tbl<RecT> {
 	}
 
 	@Override
-	protected void clear() {
+	public TempTbl<RecT> clear() {
 		super.clear();
 		dels.clear();
-	}
-
-	@Override
-	protected void del(final UUID id) {
-		super.del(id);
-		dels.add(id);
+		return this;
 	}
 	
 	public Stream<UUID> dels() {
@@ -29,6 +24,12 @@ public abstract class TempTbl<RecT extends Rec> extends Tbl<RecT> {
 	public boolean isDel(final UUID id) {
 		return dels.contains(id);
 	}
-	
+
+	@Override
+	protected void del(final UUID id) {
+		super.del(id);
+		dels.add(id);
+	}
+
 	private final Set<UUID> dels = new ConcurrentSkipListSet<>();
 }

@@ -5,6 +5,9 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
 
+import javax.json.JsonString;
+import javax.json.JsonValue;
+
 public class DeciCol<RecT> extends Col<RecT, BigDecimal> {
 	public static final DecimalFormat fmt = (DecimalFormat)NumberFormat.getInstance();
     
@@ -18,8 +21,9 @@ public class DeciCol<RecT> extends Col<RecT, BigDecimal> {
 	}
 	
 	@Override
-	public BigDecimal fromJson(final String v) {
-        return (BigDecimal)fmt.parse(v, new ParsePosition(0));
+	public BigDecimal fromJson(final JsonValue v) {
+        return (BigDecimal)fmt.parse(((JsonString)v).getString(), 
+        	new ParsePosition(0));
 	}
 
 	@Override

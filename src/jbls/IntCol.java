@@ -1,5 +1,7 @@
 package jbls;
 
+import javax.json.JsonValue;
+import javax.json.JsonNumber;
 import javax.json.stream.JsonGenerator;
 
 public class IntCol<RecT> extends Col<RecT, Integer> {
@@ -8,8 +10,8 @@ public class IntCol<RecT> extends Col<RecT, Integer> {
 	}
 
 	@Override
-	public Integer fromJson(final String v) {
-        return Integer.valueOf(v);
+	public Integer fromJson(final JsonValue v) {
+        return ((JsonNumber)v).intValue();
 	}	
 
 	@Override

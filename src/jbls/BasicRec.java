@@ -94,9 +94,8 @@ public class BasicRec implements Rec {
 					.read((c)     -> c.name)
 					.write((c, v) -> c.name = v);
 
-				public final MapCol<Customer, Instant, UUID> Orders = 
-					mapCol(new TimeCol<Customer>("orderTime"), 
-						new IdCol<Customer>("Lookup"))
+				public final MapCol<Customer, UUID> Orders = 
+					mapCol(new IdCol<Customer>("orderLookup"))
 					.read((c)     -> c.orderLookup);
 				
 				public T(final String n) {
@@ -120,7 +119,7 @@ public class BasicRec implements Rec {
 			public Order newOrder() {
 				Order o = Order.tbl.ins(db);
 				o.cust.set(this);
-				orderLookup.put(o.insTime, o.id);
+				orderLookup.put(o.insTime.toString(), o.id);
 				return o;
 			}
 			
@@ -131,7 +130,7 @@ public class BasicRec implements Rec {
 					.map((id) -> Order.tbl.get(id, db));
 			}
 		
-			private Map<Instant, UUID> orderLookup = new TreeMap<>();
+			private Map<String, UUID> orderLookup = new TreeMap<>();
 		}
 
 		public static class Order extends BasicRec {
@@ -256,7 +255,7 @@ public class BasicRec implements Rec {
 			assertTrue(c.upTime().compareTo(Instant.now()) <= 0);
 			assertEquals(1, c.rev());
 			assertEquals(c, db.tempTbl(Customer.tbl).get(c.id, db));
-			assertEquals(c, Customer.tbl.get(c.id, db));	
+			assertEquals(c, Customer.tbl.get(c.id, db));
 			Customer.tbl.up(c, db);
 			assertEquals(2, c.rev());
 			assertTrue(c.upTime().compareTo(c.insTime) >= 0);
@@ -282,11 +281,51 @@ public class BasicRec implements Rec {
 		}
 
 		@Test
+		public void testLoadOffs() {
+			Customer c = Customer.tbl.ins(db);
+			Order o = c.newOrder();
+			Product p = Product.tbl.ins(db);
+			Item i = o.newItem(p, BigDecimal.valueOf(100));
+			
+			db.commit();			
+			Customer.tbl.clear().loadOffs(db);
+			Order.tbl.clear().loadOffs(db);
+			Product.tbl.clear().loadOffs(db);
+			Item.tbl.clear().loadOffs(db);
+			
+			assertEquals(c, Customer.tbl.get(c.id, db));
+			assertEquals(o, Order.tbl.get(o.id, db));
+			assertEquals(p, Product.tbl.get(p.id, db));
+			assertEquals(i, Item.tbl.get(i.id, db));
+		}
+
+		@Test
+		public void testLoadRecs() {
+			Customer c = Customer.tbl.ins(db);
+			Order o = c.newOrder();
+			Product p = Product.tbl.ins(db);
+			Item i = o.newItem(p, BigDecimal.valueOf(100));
+			
+			db.commit();			
+			Customer.tbl.clear().loadRecs(db);
+			Order.tbl.clear().loadRecs(db);
+			Product.tbl.clear().loadRecs(db);
+			Item.tbl.clear().loadRecs(db);
+			
+			assertEquals(c, Customer.tbl.get(c.id, db));
+			assertEquals(o, Order.tbl.get(o.id, db));
+			assertEquals(p, Product.tbl.get(p.id, db));
+			assertEquals(i, Item.tbl.get(i.id, db));
+		}
+		
+		@Test
 		public void testCommit() {
 			Customer c = Customer.tbl.ins(db);
 			db.commit();
 			assertNull(db.tempTbl(Customer.tbl).get(c.id, db));	
 			assertEquals(c, Customer.tbl.get(c.id, db));	
+			
+			
 			
 			Customer.tbl.del(c, db);
 			db.commit();

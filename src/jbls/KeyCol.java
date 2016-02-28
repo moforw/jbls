@@ -24,12 +24,12 @@ public class KeyCol<RecT> extends Col<RecT, Key> {
 	}
 
 	@Override
-	public Key fromJson(final String v) {
+	public Key fromJson(final JsonValue v) {
 		throw new RuntimeException("Not supported!");
 	}
 	
 	@Override
-	public void load(final RecT rec, final JsonObject json) {
+	public void load(final RecT rec, final JsonObject json, final DB db) {
 		final JsonArray jsa = json.getJsonArray(name);
 		
 		final byte[] bs = new byte[jsa.size()];

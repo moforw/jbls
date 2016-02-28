@@ -3,6 +3,7 @@ package jbls;
 import java.util.UUID;
 
 import javax.json.JsonObject;
+import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 
 public class RefCol<RecT extends Rec, RefT extends Rec> 
@@ -15,13 +16,13 @@ extends Col<RecT, Ref<RecT, RefT>>{
 	}
 
 	@Override
-	public Ref<RecT, RefT> fromJson(final String v) {
+	public Ref<RecT, RefT> fromJson(final JsonValue v) {
 		throw new RuntimeException("Not supported!");
 	}
 
 	@Override
-	public void load(final Rec rec, final JsonObject json) {
-		final UUID id = refTbl.Id.fromJson(json.getString(name));
+	public void load(final Rec rec, final JsonObject json, final DB db) {
+		final UUID id = refTbl.Id.fromJson(json.get(name));
 		@SuppressWarnings("unchecked")
 		final Ref<RecT, RefT> r = getVal((RecT)rec);
 		r.set(id);

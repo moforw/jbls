@@ -2,14 +2,17 @@ package jbls;
 
 import java.time.Instant;
 
+import javax.json.JsonString;
+import javax.json.JsonValue;
+
 public class TimeCol<RecT> extends Col<RecT, Instant> {
 	public TimeCol(final String n) {
 		super(n);
 	}
 
 	@Override
-	public Instant fromJson(final String v) {
-        return Instant.parse(v);
+	public Instant fromJson(final JsonValue v) {
+ 		return Instant.parse(((JsonString)v).getString());
 	}	
 
 	@Override

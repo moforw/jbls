@@ -1,5 +1,7 @@
 package jbls;
 
+import javax.json.JsonNumber;
+import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 
 public class LongCol<RecT> extends Col<RecT, Long> {
@@ -8,8 +10,8 @@ public class LongCol<RecT> extends Col<RecT, Long> {
 	}
 
 	@Override
-	public Long fromJson(final String v) {
-        return Long.valueOf(v);
+	public Long fromJson(final JsonValue v) {
+		return ((JsonNumber)v).longValue();
 	}	
 	
 	@Override

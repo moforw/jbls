@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
@@ -13,10 +14,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
 
-//TODO extract Tbl.load(UUID) && load(long offs)
-//TODO only open tbl files once per commit
-//TODO log rec with "sys:del" = true on del
-
 //TODO rename KeyCol to BasicKeyCol<RecT, KeyT>
 ///add PubKeyCol & PrivKeyCol
 
@@ -24,16 +21,6 @@ import javax.json.stream.JsonGenerator;
 ///convert Tbl.offs to RevIdx<RecT, Long>
 ///change RefCol to take a RevIdx instead of Tbl for lookup
 ///add stream(set<UUID>), return stream of ValT
-
-//TODO implement file loading
-///add Tbl.loadRecs(db)
-///add Tbl.loadOffs(db)
-///handle sys:del
-///add tests
-
-/*if (o.get("sys:del") == JsonValue.TRUE) {
-recs.remove(UUID.fromString(obj.getString("id")));
-} */
 
 //TODO add aes encryption
 ///check bookmark
@@ -51,6 +38,22 @@ recs.remove(UUID.fromString(obj.getString("id")));
 ///take Col as constructor param
 
 public class DB {
+	public static void writeDel(final Tbl<?> t, final UUID id, final JsonGenerator json) {
+		json.writeStartObject();
+		json.write("id", t.Id.toJson(id));
+		json.write("del", true);
+		json.writeEnd();
+		json.flush();
+	}
+
+	public static void writeLn(final OutputStreamWriter w) {
+		try {
+			w.write('\n');
+		} catch (final IOException e) {
+			throw new RuntimeException(e);
+		}
+	}	
+	
 	public final Path path;	
 	
 	public DB(final Path p) {
@@ -61,82 +64,77 @@ public class DB {
 		tempTbls.entrySet()
 			.parallelStream()
 			.forEach((e) -> {
+				final Tbl<?> t = e.getKey();
+				final TempTbl<?> tt = e.getValue();
 				
-				e.getValue().recs()
-					.parallel()
-					.forEach((r) -> {
-						e.getKey().setPrevOffs(r);
-						long offs = commitRec(e.getKey(), r);
-						commitOffs(e.getKey(), r.id(), offs);
-						e.getKey().up(r, offs);						
+				final File f = t.recsPath(this).toFile();
+				try {
+					f.createNewFile();
+					try (final FileOutputStream fs = new FileOutputStream(f, true);
+							final OutputStreamWriter fw = new OutputStreamWriter(fs)) {
+						final FileChannel chan = fs.getChannel();
+					
+						tt.recs()
+							.forEach((r) -> {
+								t.setPrevOffs(r);
+								
+								try {
+									final long offs = chan.size();
+									final JsonGenerator json = 
+											Json.createGenerator(fw);
+									
+									json.writeStartObject();
+									t.writeJson(r, json);
+									json.writeEnd();
+									json.flush();
+
+									writeLn(fw);
+									t.up(r, offs);
+								}  catch (final IOException ex) {
+									throw new RuntimeException(ex);
+								}
+						});
+						
+						tt.dels().forEach((id) -> {
+							t.del(id);
+							writeDel(t, id, Json.createGenerator(fw));
+							writeLn(fw);
+						});						
+					}
+				} catch (final IOException ex) {
+					throw new RuntimeException(ex);
+				}
+
+				try (final FileWriter fw = 
+						new FileWriter(t.offsPath(this).toFile(), true)) {
+				
+					tt.recs().forEach((r) -> {
+							final JsonGenerator json = 
+									Json.createGenerator(fw);
+							
+							json.writeStartObject();
+							json.write("id", t.Id.toJson(r.id()));
+							json.write("offs", t.offs(r));
+							json.writeEnd();
+							json.flush();
+							
+							writeLn(fw);
 					});
 
-				e.getValue().dels()
-					.parallel()
-					.forEach((id) -> {
-						e.getKey().del(id);	
-						commitDel(e.getKey(), id);
+					tt.dels().forEach((id) -> {
+						writeDel(t, id, Json.createGenerator(fw));
+						writeLn(fw);
 					});
+				} catch (final IOException ex) {
+					throw new RuntimeException(ex);
+				}
+				
 			
 			});
 
 		clearTemp();
 	}
-
-	public long commitRec(final Tbl<?> t, Rec r) {
-		try {
-			final File f = new File(t.recsPath(this).toString());
-			f.createNewFile();
-			
-			try (final FileOutputStream fs = new FileOutputStream(f, true)) {
-				final long offs = fs.getChannel().size();
-				final OutputStreamWriter w = new OutputStreamWriter(fs);
-				try(JsonGenerator json = Json.createGenerator(w)) {
-					json.writeStartObject();
-					t.writeJson(r, json);
-					json.writeEnd();
-					try {
-						w.write('\n');
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-				}
-				
-				return offs;
-			} 
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public void commitOffs(final Tbl<?> t, final UUID id, long offs) {		
-		try (final FileWriter fw = 
-				new FileWriter(t.offsPath(this).toString(), true);
-				JsonGenerator json = Json.createGenerator(fw)) {
-			json.writeStartObject();
-			json.write("id", id.toString());
-			json.write("offs", offs);
-			json.writeEnd();
-			fw.write('\n');
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public void commitDel(final Tbl<?> t, final UUID id) {		
-		try (final FileWriter fw = 
-				new FileWriter(t.offsPath(this).toString(), true);
-				JsonGenerator json = Json.createGenerator(fw)) {
-			json.writeStartObject();
-			json.write("id", id.toString());
-			json.write("sys:del", true);
-			json.writeEnd();
-			fw.write('\n');
-		} catch (final IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
+	
 	public boolean isDel(final Tbl<?> t, final UUID id) {
 		final TempTbl<?> tt = tempTbls.get(t);
 		

@@ -1,6 +1,7 @@
 package jbls;
 
 import javax.json.JsonObject;
+import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 
 public class RecCol<RecT extends Rec, ValT extends Rec> 
@@ -13,15 +14,15 @@ extends Col<RecT, ValT>{
 	}
 	
 	@Override
-	public ValT fromJson(final String v) {
+	public ValT fromJson(final JsonValue v) {
 		throw new RuntimeException("Not supported!");
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public void load(final Rec rec, final JsonObject json) {
+	public void load(final Rec rec, final JsonObject json, final DB db) {
 		final JsonObject jso = json.getJsonObject(name);
-		setVal((RecT)rec, valTbl.load(jso));
+		setVal((RecT)rec, valTbl.load(jso, db));
 	}
 	
 	@Override

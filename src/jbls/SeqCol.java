@@ -3,6 +3,7 @@ package jbls;
 import java.util.Collection;
 
 import javax.json.JsonObject;
+import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 
 public class SeqCol<RecT extends Rec, ValT> 
@@ -13,12 +14,12 @@ extends Col<RecT, Collection<ValT>>{
 	}
 	
 	@Override
-	public Collection<ValT> fromJson(final String v) {
+	public Collection<ValT> fromJson(final JsonValue v) {
 		throw new RuntimeException("Not supported!");
 	}
 	
 	@Override
-	public void load(final Rec rec, final JsonObject json) {
+	public void load(final Rec rec, final JsonObject json, final DB db) {
 		final JsonObject jso = json.getJsonObject(name);
 		@SuppressWarnings("unchecked")
 		final Collection<ValT> coll = getVal((RecT)rec);
